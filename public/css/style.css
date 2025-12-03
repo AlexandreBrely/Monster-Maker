@@ -1,0 +1,33 @@
+/* Custom styles for Monster Maker */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Custom font for headers */
+.coiny-regular {
+    font-family: "Coiny", system-ui;
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Card hover effect */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Navbar active link */
+.nav-link.active {
+    font-weight: bold;
+}

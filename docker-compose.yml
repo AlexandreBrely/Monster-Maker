@@ -1,0 +1,57 @@
+services:
+  web:
+    image: php:8.4-apache
+    container_name: php-apache-monster-maker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/var/www
+    ports:
+      - "8000:80"
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=monster_maker
+    networks:
+      - app-network
+
+  db:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mysql
+    container_name: mysql-db-monster-maker
+    restart: always
+    environment:
+      MYSQL_DATABASE: monster_maker
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-monster-maker
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+      UPLOAD_LIMIT: 64M 
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:

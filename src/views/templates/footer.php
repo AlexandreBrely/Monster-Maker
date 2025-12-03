@@ -1,0 +1,21 @@
+<footer class="mt-auto bg-dark text-white py-4">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center text-md-start">
+                <a href="index.php?url=cgu" class="text-white text-decoration-none me-3">CGU</a>
+                <a href="index.php?url=terms" class="text-white text-decoration-none">Terms</a>
+            </div>
+            <div class="col-md-4 text-center">
+                <p class="mb-0 fw-bold">Monster Maker !</p>
+            </div>
+            <div class="col-md-4 text-center text-md-end">
+                <p class="mb-0">&copy; 2025 Alex, LaKobolderie</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+</html>

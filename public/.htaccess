@@ -1,0 +1,57 @@
+# ====================================================================
+# FICHIER .htaccess - Configuration Apache pour URL Rewriting
+# ====================================================================
+# Ce fichier permet de créer des URLs "propres" sans index.php visible
+# Exemple : au lieu de "index.php?url=monsters", on peut écrire juste "monsters"
+
+# Vérifie que le module mod_rewrite d'Apache est activé
+# Si le module n'est pas activé, tout le code dans ce bloc sera ignoré
+<IfModule mod_rewrite.c>
+    
+    # Active le moteur de réécriture d'URLs
+    # Sans cette ligne, aucune règle de réécriture ne fonctionnera
+    RewriteEngine On
+    
+    # ----------------------------------------------------------------
+    # RÈGLES DE RÉÉCRITURE
+    # ----------------------------------------------------------------
+    
+    # CONDITION 1 : Vérifie si le fichier demandé N'existe PAS physiquement
+    # !-f signifie "n'est pas un fichier" (! = NOT, -f = file)
+    # Exemple : si on demande "style.css" et qu'il existe, cette condition est FAUSSE
+    RewriteCond %{REQUEST_FILENAME} !-f
+    
+    # CONDITION 2 : Vérifie si le dossier demandé N'existe PAS physiquement
+    # !-d signifie "n'est pas un dossier" (! = NOT, -d = directory)
+    # Exemple : si on demande "css/" et qu'il existe, cette condition est FAUSSE
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # RÈGLE : Si les 2 conditions au-dessus sont VRAIES, on applique cette règle
+    # ^(.*)$ = capture TOUT ce qui suit le nom de domaine
+    # index.php?url=$1 = redirige vers index.php avec l'URL capturée en paramètre
+    # [QSA,L] = flags spéciaux :
+    #   QSA = Query String Append (garde les paramètres GET existants)
+    #   L = Last (arrête le traitement, c'est la dernière règle à appliquer)
+    # 
+    # EXEMPLE CONCRET :
+    # Utilisateur tape : localhost:8000/monsters
+    # Apache vérifie : pas de fichier "monsters" ? OUI
+    # Apache vérifie : pas de dossier "monsters" ? OUI
+    # Apache transforme en : localhost:8000/index.php?url=monsters
+    # Le routeur PHP dans index.php reçoit alors "monsters" et charge le bon contrôleur
+    RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+    
+</IfModule>
+
+# ====================================================================
+# POURQUOI C'EST IMPORTANT ?
+# ====================================================================
+# Sans ce fichier : vos URLs seraient moches et exposées
+#   → index.php?url=monsters&id=5
+# 
+# Avec ce fichier : URLs propres et professionnelles
+#   → monsters/5
+# 
+# ATTENTION : Ce fichier ne fonctionne QU'AVEC APACHE
+# Si vous utilisez Nginx, il faut une configuration différente
+# ====================================================================
