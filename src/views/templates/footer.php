@@ -2,8 +2,8 @@
     <div class="container-fluid">
         <div class="row align-items-center">
             <div class="col-md-4 text-center text-md-start">
-                <a href="index.php?url=cgu" class="text-white text-decoration-none me-3">CGU</a>
-                <a href="index.php?url=terms" class="text-white text-decoration-none">Terms</a>
+                
+                <a href="index.php?url=terms" class="text-white text-decoration-none">Terms of Service</a>
             </div>
             <div class="col-md-4 text-center">
                 <p class="mb-0 fw-bold">Monster Maker !</p>

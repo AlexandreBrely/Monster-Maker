@@ -33,3 +33,6 @@ COPY ./php/conf/php.ini /usr/local/etc/php/php.ini
 
 # Configuration de Xdebug (copie du fichier une seule fois)
 COPY ./php/conf/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+
+# Donner les bonnes permissions au dossier /var/www
+RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www

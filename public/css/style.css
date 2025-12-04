@@ -1,25 +1,69 @@
 /* Custom styles for Monster Maker */
 
+/* ===== FONTS ===== */
+/* New Rocker - For titles and navbar */
+.new-rocker-regular {
+    font-family: "New Rocker", system-ui;
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Nunito - Main content font */
+.nunito-regular {
+    font-family: "Nunito", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.nunito-bold {
+    font-family: "Nunito", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Raleway - Italic for card details */
+.raleway-light-italic {
+    font-family: "Raleway", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: italic;
+}
+
+.raleway-regular-italic {
+    font-family: "Raleway", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: italic;
+}
+
+/* ===== GLOBAL STYLES ===== */
 body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    font-family: "Nunito", sans-serif;
 }
 
 main {
     flex: 1;
 }
 
-/* Custom font for headers */
-.coiny-regular {
-    font-family: "Coiny", system-ui;
-    font-weight: 400;
-    font-style: normal;
+/* Apply New Rocker to all headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: "New Rocker", system-ui;
 }
 
-/* Card hover effect */
+/* Keep regular weight for smaller headings */
+h4, h5, h6 {
+    font-weight: 400;
+}
+
+/* ===== CARD STYLES ===== */
 .card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    font-family: "Nunito", sans-serif;
 }
 
 .card:hover {
@@ -27,7 +71,33 @@ main {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Navbar active link */
+.card-title {
+    font-family: "New Rocker", system-ui;
+}
+
+.card-text {
+    font-family: "Nunito", sans-serif;
+}
+
+/* ===== NAVBAR STYLES ===== */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    font-family: "Nunito", sans-serif;
+    font-weight: 600;
+}
+
 .nav-link.active {
-    font-weight: bold;
+    font-weight: 700;
+}
+
+/* ===== FOOTER STYLES ===== */
+footer {
+    font-family: "Nunito", sans-serif;
+}
+
+footer a {
+    font-weight: 600;
 }
