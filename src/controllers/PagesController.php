@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controllers;
+
 // Contrôleur pour les pages statiques (CGU, Terms, 404)
 class PagesController
 {

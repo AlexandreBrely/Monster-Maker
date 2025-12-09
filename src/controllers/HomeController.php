@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Controllers;
+
 class HomeController
 {
     // Afficher la page d'accueil

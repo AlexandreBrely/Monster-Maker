@@ -14,7 +14,7 @@
                     <a class="nav-link" href="index.php?url=monsters">Monsters</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php?url=create">Create Monster</a>
+                    <a class="nav-link" href="index.php?url=create_select">Create Monster</a>
                 </li>
                 <?php if (isset($_SESSION['user'])): ?>
                     <li class="nav-item">

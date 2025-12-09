@@ -16,7 +16,7 @@
                     <i class="bi bi-pencil-square display-1 text-primary mb-3"></i>
                     <h3 class="card-title">Create Monsters</h3>
                     <p class="card-text">Design your own unique monsters with our easy-to-use creation tool. Customize stats, abilities, and more!</p>
-                    <a href="index.php?url=create" class="btn btn-primary">Start Creating</a>
+                    <a href="index.php?url=create_select" class="btn btn-primary">Start Creating</a>
                 </div>
             </div>
         </div>
