@@ -26,6 +26,7 @@ require_once ROOT . '/src/views/templates/navbar.php';
     
     <form action="index.php?url=create_boss" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="is_legendary" value="1">
+        <input type="hidden" name="card_size" value="1">
 
         <!-- BASIC IDENTIFICATION -->
         <div class="mb-3">

@@ -51,12 +51,12 @@ if (!empty($old['saving_throws'])) {
             <label class="form-label">Card Size</label>
             <div>
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="card_size" id="card_size_small" value="1" <?php echo ($old['card_size'] ?? 1) == 1 ? 'checked' : ''; ?>>
+                    <input class="form-check-input" type="radio" name="card_size" id="card_size_small" value="2" <?php echo ($old['card_size'] ?? 2) == 2 ? 'checked' : ''; ?>>
                     <label class="form-check-label" for="card_size_small">Small Monster (Playing Card)</label>
                 </div>
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="card_size" id="card_size_boss" value="0" <?php echo ($old['card_size'] ?? 1) == 0 ? 'checked' : ''; ?>>
-                    <label class="form-check-label" for="card_size_boss">Boss Monster (A5 Sheet)</label>
+                    <input class="form-check-input" type="radio" name="card_size" id="card_size_boss" value="1" <?php echo ($old['card_size'] ?? 2) == 1 ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="card_size_boss">Boss Monster (A6 Sheet)</label>
                 </div>
             </div>
         </div>

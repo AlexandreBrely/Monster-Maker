@@ -10,6 +10,7 @@
  * Expected variables (must be set before including this file):
  * - $monster: array with monster data (must be deserialized with JSON fields as arrays)
  * - $showOwnerBadge: bool (optional) - show public/private badge for owner
+ * - $isLiked: bool (optional) - whether current user has liked this monster
  * 
  * How it works:
  * 1. Loop through abilities (STR, DEX, etc.) and calculate modifiers
@@ -19,6 +20,8 @@
  */
 
 $showOwnerBadge = $showOwnerBadge ?? false; // Default to false if not set
+$isLiked = $isLiked ?? false; // Default to false if not set
+$likeCount = (int)($monster['like_count'] ?? 0);
 ?>
 <div class="monster-card-mini">
     <a href="index.php?url=monster&id=<?php echo $monster['monster_id']; ?>" class="text-decoration-none">
@@ -78,13 +81,108 @@ $showOwnerBadge = $showOwnerBadge ?? false; // Default to false if not set
                     <?php endforeach; ?>
                 </div>
 
-                <?php if ($showOwnerBadge): ?>
-                    <div class="mini-badge">
+                <!-- Like button and badges -->
+                <div class="mini-footer d-flex justify-content-between align-items-center">
+                    <?php if ($showOwnerBadge): ?>
                         <span class="badge <?php echo $monster['is_public'] ? 'bg-success' : 'bg-warning text-dark'; ?>">
                             <?php echo $monster['is_public'] ? 'Public' : 'Private'; ?>
                         </span>
+                    <?php else: ?>
+                        <span></span>
+                    <?php endif; ?>
+                    
+                    <div class="d-flex gap-2 align-items-center">
+                        <!-- 
+                            FOR BEGINNERS - ADD TO COLLECTION DROPDOWN:
+                            
+                            WHAT IS THIS?
+                            A dropdown button that shows all user's collections.
+                            Clicking a collection adds this monster to that collection.
+                            
+                            HOW IT WORKS:
+                            1. Click "+" button
+                            2. Dropdown opens showing "To Print", "My Favorites", etc.
+                            3. Click collection name
+                            4. JavaScript sends AJAX request to server
+                            5. Server adds monster to collection
+                            6. Success message appears
+                            7. No page reload!
+                            
+                            WHY ONLY SHOW IF LOGGED IN?
+                            Anonymous visitors can't create collections.
+                            !empty($userCollections) also checks they have at least one collection.
+                            
+                            ONCLICK EVENT HANDLING:
+                            event.stopPropagation() prevents dropdown click from triggering
+                            the card's click event (which would navigate to monster page)
+                        -->
+                        <?php if (isset($_SESSION['user']) && !empty($userCollections ?? [])): ?>
+                            <div class="dropdown" onclick="event.stopPropagation(); event.preventDefault();">
+                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
+                                        type="button" 
+                                        data-bs-toggle="dropdown">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <?php 
+                                    /*
+                                     * FOR BEGINNERS - DATA ATTRIBUTES:
+                                     * data-* attributes store custom data on HTML elements
+                                     * 
+                                     * WHY USE THEM?
+                                     * JavaScript can read these values when user clicks
+                                     * We need to know: which monster, which collection
+                                     * 
+                                     * NAMING:
+                                     * HTML: data-monster-id="42"
+                                     * JavaScript: element.dataset.monsterId (camelCase!)
+                                     * 
+                                     * ONCLICK:
+                                     * onclick="addToCollection(event, this)"
+                                     * - event = click event object
+                                     * - this = the <a> element that was clicked
+                                     * Passes both to JavaScript function
+                                     */
+                                    foreach ($userCollections as $collection): 
+                                    ?>
+                                        <li>
+                                            <a class="dropdown-item add-to-collection" 
+                                               href="#"
+                                               data-monster-id="<?php echo $monster['monster_id']; ?>"
+                                               data-collection-id="<?php echo $collection['collection_id']; ?>"
+                                               data-collection-name="<?php echo htmlspecialchars($collection['collection_name']); ?>"
+                                               onclick="addToCollection(event, this)">
+                                                <?php if ($collection['is_default']): ?>
+                                                    <i class="bi bi-printer"></i>
+                                                <?php else: ?>
+                                                    <i class="bi bi-folder"></i>
+                                                <?php endif; ?>
+                                                <?php echo htmlspecialchars($collection['collection_name']); ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Like Button -->
+                        <div class="like-section">
+                            <?php if (isset($_SESSION['user'])): ?>
+                                <button class="btn btn-sm btn-outline-danger like-btn" 
+                                        data-monster-id="<?php echo $monster['monster_id']; ?>"
+                                        data-liked="<?php echo $isLiked ? '1' : '0'; ?>"
+                                        onclick="toggleLike(event, <?php echo $monster['monster_id']; ?>)">
+                                    <i class="<?php echo $isLiked ? 'bi bi-heart-fill' : 'bi bi-heart'; ?>"></i>
+                                    <span class="like-count"><?php echo $likeCount; ?></span>
+                                </button>
+                            <?php else: ?>
+                                <span class="text-muted">
+                                    <i class="bi bi-heart"></i> <?php echo $likeCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                <?php endif; ?>
+                </div>
             </div>
 
             <!-- BACK: Full Body Image -->

@@ -55,17 +55,28 @@ $routes = [
     // Monster routes
     'monsters' => ['controller' => 'MonsterController', 'action' => 'index'],
     'monster' => ['controller' => 'MonsterController', 'action' => 'handleMonsterRoute'],
+    'monster-like' => ['controller' => 'MonsterController', 'action' => 'toggleLike'],
     'create' => ['controller' => 'MonsterController', 'action' => 'create'],
     'create_select' => ['controller' => 'MonsterController', 'action' => 'selectCreate'],
     'create_boss' => ['controller' => 'MonsterController', 'action' => 'createBoss'],
     'create_small' => ['controller' => 'MonsterController', 'action' => 'createSmall'],
     'my-monsters' => ['controller' => 'MonsterController', 'action' => 'myMonsters'],
+    'my-cards' => ['controller' => 'MonsterController', 'action' => 'myCards'],
     
     // Lair card routes (horizontal landscape cards for lair actions)
     'my-lair-cards' => ['controller' => 'LairCardController', 'action' => 'myLairCards'],
     'lair-card' => ['controller' => 'LairCardController', 'action' => 'show'],
     'lair-card-create' => ['controller' => 'LairCardController', 'action' => 'create'],
     'lair-card-store' => ['controller' => 'LairCardController', 'action' => 'store'],
+    
+    // Collection routes (organize monsters for printing)
+    'collections' => ['controller' => 'CollectionController', 'action' => 'index'],
+    'collection-view' => ['controller' => 'CollectionController', 'action' => 'view'],
+    'collection-create' => ['controller' => 'CollectionController', 'action' => 'create'],
+    'collection-edit' => ['controller' => 'CollectionController', 'action' => 'edit'],
+    'collection-delete' => ['controller' => 'CollectionController', 'action' => 'delete'],
+    'collection-add-monster' => ['controller' => 'CollectionController', 'action' => 'addMonster'],
+    'collection-remove-monster' => ['controller' => 'CollectionController', 'action' => 'removeMonster'],
     
     // Static pages
     'cgu' => ['controller' => 'PagesController', 'action' => 'cgu'],

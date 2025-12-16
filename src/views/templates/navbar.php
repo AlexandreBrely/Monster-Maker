@@ -18,10 +18,12 @@
                 </li>
                 <?php if (isset($_SESSION['user'])): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php?url=my-monsters">My Monsters</a>
+                        <a class="nav-link" href="index.php?url=my-cards">My Cards</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php?url=my-lair-cards">My Lair Cards</a>
+                        <a class="nav-link" href="index.php?url=collections">
+                            <i class="bi bi-collection"></i> Collections
+                        </a>
                     </li>
                 <?php endif; ?>
             </ul>

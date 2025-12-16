@@ -392,6 +392,28 @@ class User
     }
 
     /**
+     * Search for users by username
+     * 
+     * @param string|null $search Search term for username
+     * @return array Array of users matching the search
+     */
+    public function searchByUsername($search = null)
+    {
+        if (empty($search)) {
+            // If no search term, return recent users (limited)
+            $sql = "SELECT u_id, u_name, u_email, u_avatar, u_created_at FROM users ORDER BY u_created_at DESC LIMIT 50";
+            $stmt = $this->db->query($sql);
+        } else {
+            // Search by username
+            $sql = "SELECT u_id, u_name, u_email, u_avatar, u_created_at FROM users WHERE u_name LIKE :search ORDER BY u_name ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':search' => '%' . $search . '%']);
+        }
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Validate user profile update input data.
      * 
      * Similar to validateRegister(), but different rules:

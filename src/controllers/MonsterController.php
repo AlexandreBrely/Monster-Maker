@@ -3,6 +3,10 @@
 namespace App\Controllers;
 
 use App\Models\Monster;
+use App\Models\Collection;
+use App\Services\FileUploadService;
+use App\Models\LairCard;
+use App\Models\MonsterLike;
 
 /**
  * MonsterController
@@ -11,12 +15,19 @@ use App\Models\Monster;
 class MonsterController
 {
     private $monsterModel;
+    private $likeModel;
+    private $collectionModel;
+    private $fileUploadService;
 
     public function __construct()
     {
         // Instantiate the Monster model (data access layer)
         // Controllers should delegate data operations to models
         $this->monsterModel = new Monster();
+        $this->likeModel = new MonsterLike();
+        $this->collectionModel = new Collection();
+        // Instantiate file upload service (handles all file uploads)
+        $this->fileUploadService = new FileUploadService();
     }
 
     // Fast guard: redirect visitors who are not logged in
@@ -61,7 +72,7 @@ class MonsterController
             $images = [];
 
             // Traitement des images si présentes
-            if (!empty($_FILES['image_portrait']['name'])) {
+            if (isset($_FILES['image_portrait']) && !empty($_FILES['image_portrait']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_portrait'], 'monsters');
                 if ($imageResult['success']) {
                     // Use database column key name for consistency with Model::create
@@ -139,67 +150,11 @@ class MonsterController
             return;
         }
 
-        // Prepare view variables for statblock display
-        $abilityLabels = [
-            'strength' => 'STR',
-            'dexterity' => 'DEX',
-            'constitution' => 'CON',
-            'intelligence' => 'INT',
-            'wisdom' => 'WIS',
-            'charisma' => 'CHA'
-        ];
-
-        // Build saving throws map
-        $savesMap = [];
-        if (!empty($monster['saving_throws']) && is_string($monster['saving_throws'])) {
-            $throwPairs = explode(',', $monster['saving_throws']);
-            foreach ($throwPairs as $pair) {
-                $parts = explode(':', trim($pair));
-                if (count($parts) === 2) {
-                    $ability = strtolower(trim($parts[0]));
-                    $bonus = trim($parts[1]);
-                    $savesMap[$ability] = $bonus;
-                }
-            }
-        }
-
-        // Build skills array
-        $skills = [];
-        if (!empty($monster['skills']) && is_string($monster['skills'])) {
-            $skillPairs = explode(',', $monster['skills']);
-            foreach ($skillPairs as $pair) {
-                $pair = trim($pair);
-                if (!empty($pair)) {
-                    $skills[] = $pair;
-                }
-            }
-        }
-
-        // Build senses array
-        $senses = [];
-        if (!empty($monster['senses']) && is_string($monster['senses'])) {
-            $senseParts = explode(',', $monster['senses']);
-            foreach ($senseParts as $sense) {
-                $sense = trim($sense);
-                if (!empty($sense)) {
-                    $senses[] = $sense;
-                }
-            }
-        }
-
-        // Build abilities grid with modifiers
-        $abilitiesGrid = [];
-        foreach ($abilityLabels as $key => $label) {
-            $score = isset($monster[$key]) ? (int)$monster[$key] : 10;
-            $mod = $this->calculateModifier($score);
-            $abilityShort = strtolower($label);
-            $saveBonus = $savesMap[$abilityShort] ?? '';
-            $abilitiesGrid[] = [
-                'label' => $label,
-                'mod_display' => $this->formatModifier($mod),
-                'save_bonus' => $saveBonus,
-            ];
-        }
+        // Prepare view variables using helper methods
+        $abilitiesGrid = $this->prepareAbilityGrid($monster);
+        $parsedFields = $this->parseMonsterFields($monster);
+        $skills = $parsedFields['skills'];
+        $senses = $parsedFields['senses'];
 
         // Ensure JSON arrays are properly populated
         $traits = $monster['traits'] ?? [];
@@ -210,7 +165,15 @@ class MonsterController
 
         // Route to correct view based on card size
         // card_size: 1 = Boss (A6 horizontal), 2 = Small (playing card)
-        if (isset($monster['card_size']) && $monster['card_size'] == 1) {
+        // Fallback: use is_legendary if card_size is not set
+        $isBoss = false;
+        if (isset($monster['card_size'])) {
+            $isBoss = ((int)$monster['card_size'] === 1);
+        } elseif (isset($monster['is_legendary'])) {
+            $isBoss = ((int)$monster['is_legendary'] === 1);
+        }
+
+        if ($isBoss) {
             // Boss monster: A6 horizontal two-column layout
             require_once __DIR__ . '/../views/monster/boss-card.php';
         } else {
@@ -248,11 +211,121 @@ class MonsterController
         }
     }
 
-    // Affiche la liste de tous les monstres
+    // Affiche la liste de tous les monstres, lairs ou utilisateurs avec filtres
     public function index()
     {
-        $monsters = $this->monsterModel->getAll();
+        // Get search type (monster, lair, or user)
+        $searchType = $_GET['search_type'] ?? 'monster';
+        $validSearchTypes = ['monster', 'lair', 'user'];
+        if (!in_array($searchType, $validSearchTypes)) {
+            $searchType = 'monster';
+        }
+        
+        // Get filter parameters from URL
+        $orderBy = $_GET['order'] ?? 'newest';
+        $search = $_GET['search'] ?? null;
+        $size = $_GET['size'] ?? null;
+        $type = $_GET['type'] ?? null;
+        $filterUser = isset($_GET['user']) && $_GET['user'] !== '' ? (int)$_GET['user'] : null;
+        
+        // Initialize results
+        $monsters = [];
+        $lairCards = [];
+        $users = [];
+        
+        if ($searchType === 'monster') {
+            // Validate order parameter
+            $validOrders = ['random', 'newest', 'oldest', 'most_liked'];
+            if (!in_array($orderBy, $validOrders)) {
+                $orderBy = 'newest';
+            }
+            
+            // Get filtered monsters
+            $monsters = $this->monsterModel->getAllFiltered($orderBy, $filterUser, $search, $size, $type);
+            
+            // Get like data if user is logged in
+            $userLikes = [];
+            if (isset($_SESSION['user'])) {
+                $monsterIds = array_column($monsters, 'monster_id');
+                if (!empty($monsterIds)) {
+                    $userLikes = $this->likeModel->getUserLikes($_SESSION['user']['u_id'], $monsterIds);
+                }
+            }
+        } elseif ($searchType === 'lair') {
+            // Validate order parameter
+            $validOrders = ['random', 'newest', 'oldest', 'most_liked'];
+            if (!in_array($orderBy, $validOrders)) {
+                $orderBy = 'newest';
+            }
+            
+            // Get filtered lair cards
+            $lairModel = new LairCard();
+            $lairCards = $lairModel->getAllFiltered($orderBy, $search);
+        } elseif ($searchType === 'user') {
+            // Search users by username
+            $userModel = new \App\Models\User();
+            $users = $userModel->searchByUsername($search);
+        }
+        
+        // Get user's collections for "Add to Collection" dropdown
+        $userCollections = [];
+        if (isset($_SESSION['user'])) {
+            $userCollections = $this->collectionModel->getByUser($_SESSION['user']['u_id']);
+        }
+        
         require_once __DIR__ . '/../views/monster/index.php';
+    }
+    
+    // Toggle like on a monster (AJAX endpoint)
+    public function toggleLike()
+    {
+        header('Content-Type: application/json');
+        
+        // Debug logging
+        error_log('toggleLike called. Session user: ' . (isset($_SESSION['user']) ? $_SESSION['user']['u_id'] : 'none'));
+        error_log('Monster ID: ' . ($_GET['id'] ?? 'missing'));
+        
+        if (!isset($_SESSION['user'])) {
+            echo json_encode(['success' => false, 'error' => 'Not authenticated']);
+            return;
+        }
+        
+        $monsterId = $_GET['id'] ?? null;
+        if (!$monsterId) {
+            echo json_encode(['success' => false, 'error' => 'Monster ID required']);
+            return;
+        }
+        
+        $userId = $_SESSION['user']['u_id'];
+        $monsterId = (int)$monsterId;
+        
+        // Verify monster exists and is public (or owned by user)
+        $monster = $this->monsterModel->getById($monsterId);
+        if (!$monster) {
+            echo json_encode(['success' => false, 'error' => 'Monster not found']);
+            return;
+        }
+        
+        if (!$monster['is_public'] && $monster['u_id'] != $userId) {
+            echo json_encode(['success' => false, 'error' => 'Monster not public']);
+            return;
+        }
+        
+        $action = $this->likeModel->toggleLike($userId, $monsterId);
+        $newCount = $this->likeModel->countLikes($monsterId);
+        
+        error_log("Like action: $action, New count: $newCount");
+        
+        $response = [
+            'success' => true,
+            'action' => $action,
+            'count' => $newCount,
+            'liked' => ($action === 'added')
+        ];
+        
+        error_log('Response: ' . json_encode($response));
+        echo json_encode($response);
+        exit; // Ensure no extra output
     }
 
     // Affiche le formulaire d'édition
@@ -301,7 +374,7 @@ class MonsterController
 
             // Keep current filenames so we can clean up replaced files after a successful save
             // Traitement des images
-            if (!empty($_FILES['image_portrait']['name'])) {
+            if (isset($_FILES['image_portrait']) && !empty($_FILES['image_portrait']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_portrait'], 'monsters');
                 if ($imageResult['success']) {
                     $images['image_portrait'] = $imageResult['filename'];
@@ -355,50 +428,6 @@ class MonsterController
 
         $monster = $this->monsterModel->getById($id);
         if (!$monster) {
-
-                // Prepare view data to keep logic out of the template
-                $traits = !empty($monster['traits']) ? (is_array($monster['traits']) ? $monster['traits'] : json_decode($monster['traits'], true)) : [];
-                $actions = !empty($monster['actions']) ? (is_array($monster['actions']) ? $monster['actions'] : json_decode($monster['actions'], true)) : [];
-                $bonusActions = !empty($monster['bonus_actions']) ? (is_array($monster['bonus_actions']) ? $monster['bonus_actions'] : json_decode($monster['bonus_actions'], true)) : [];
-                $reactions = !empty($monster['reactions']) ? (is_array($monster['reactions']) ? $monster['reactions'] : json_decode($monster['reactions'], true)) : [];
-
-                $savingThrows = !empty($monster['saving_throws']) ? explode(', ', $monster['saving_throws']) : [];
-                $skills = !empty($monster['skills']) ? explode(', ', $monster['skills']) : [];
-                $senses = !empty($monster['senses']) ? explode(', ', $monster['senses']) : [];
-
-                // Map of save bonuses keyed by ability short name
-                $savesMap = [];
-                if (!empty($monster['saving_throws'])) {
-                    $saveParts = explode(', ', $monster['saving_throws']);
-                    foreach ($saveParts as $part) {
-                        $parts = explode(' ', trim($part)); // Format: "STR +5"
-                        if (count($parts) === 2) {
-                            $savesMap[strtolower($parts[0])] = $parts[1];
-                        }
-                    }
-                }
-
-                $abilityLabels = [
-                    'strength' => 'STR',
-                    'dexterity' => 'DEX',
-                    'constitution' => 'CON',
-                    'intelligence' => 'INT',
-                    'wisdom' => 'WIS',
-                    'charisma' => 'CHA'
-                ];
-
-                $abilitiesGrid = [];
-                foreach ($abilityLabels as $key => $label) {
-                    $score = isset($monster[$key]) ? (int)$monster[$key] : 10;
-                    $mod = $this->calculateModifier($score);
-                    $abilityShort = strtolower($label);
-                    $saveBonus = $savesMap[$abilityShort] ?? '';
-                    $abilitiesGrid[] = [
-                        'label' => $label,
-                        'mod_display' => $this->formatModifier($mod),
-                        'save_bonus' => $saveBonus,
-                    ];
-                }
             require_once __DIR__ . '/../views/pages/error-404.php';
             return;
         }
@@ -416,6 +445,19 @@ class MonsterController
             exit;
         }
 
+        // Prepare view data using helper methods
+        $abilitiesGrid = $this->prepareAbilityGrid($monster);
+        $parsedFields = $this->parseMonsterFields($monster);
+        $skills = $parsedFields['skills'];
+        $senses = $parsedFields['senses'];
+
+        // Ensure JSON arrays are properly populated
+        $traits = $monster['traits'] ?? [];
+        $actions = $monster['actions'] ?? [];
+        $bonusActions = $monster['bonus_actions'] ?? [];
+        $reactions = $monster['reactions'] ?? [];
+        $legendaryActions = $monster['legendary_actions'] ?? [];
+
         require_once __DIR__ . '/../views/monster/show.php';
     }
 
@@ -429,12 +471,96 @@ class MonsterController
     }
 
     // ===== MÉTHODES HELPER =====
+    
+    /**
+     * Prepare ability grid data for monster display.
+     * Calculates modifiers and maps saving throw bonuses.
+     * 
+     * @param array $monster Monster data with ability scores
+     * @return array Ability grid with labels, modifiers, and save bonuses
+     */
+    private function prepareAbilityGrid($monster): array
+    {
+        $abilityLabels = [
+            'strength' => 'STR',
+            'dexterity' => 'DEX',
+            'constitution' => 'CON',
+            'intelligence' => 'INT',
+            'wisdom' => 'WIS',
+            'charisma' => 'CHA'
+        ];
+
+        // Build saving throws map
+        $savesMap = [];
+        if (!empty($monster['saving_throws']) && is_string($monster['saving_throws'])) {
+            $throwPairs = explode(',', $monster['saving_throws']);
+            foreach ($throwPairs as $pair) {
+                $parts = explode(':', trim($pair));
+                if (count($parts) === 2) {
+                    $ability = strtolower(trim($parts[0]));
+                    $bonus = trim($parts[1]);
+                    $savesMap[$ability] = $bonus;
+                }
+            }
+        }
+
+        // Build abilities grid with modifiers
+        $abilitiesGrid = [];
+        foreach ($abilityLabels as $key => $label) {
+            $score = isset($monster[$key]) ? (int)$monster[$key] : 10;
+            $mod = $this->calculateModifier($score);
+            $abilityShort = strtolower($label);
+            $saveBonus = $savesMap[$abilityShort] ?? '';
+            $abilitiesGrid[] = [
+                'label' => $label,
+                'mod_display' => $this->formatModifier($mod),
+                'save_bonus' => $saveBonus,
+            ];
+        }
+
+        return $abilitiesGrid;
+    }
+
+    /**
+     * Parse comma-separated fields into arrays.
+     * 
+     * @param array $monster Monster data
+     * @return array Parsed skills and senses arrays
+     */
+    private function parseMonsterFields($monster): array
+    {
+        // Build skills array
+        $skills = [];
+        if (!empty($monster['skills']) && is_string($monster['skills'])) {
+            $skillPairs = explode(',', $monster['skills']);
+            foreach ($skillPairs as $pair) {
+                $pair = trim($pair);
+                if (!empty($pair)) {
+                    $skills[] = $pair;
+                }
+            }
+        }
+
+        // Build senses array
+        $senses = [];
+        if (!empty($monster['senses']) && is_string($monster['senses'])) {
+            $senseParts = explode(',', $monster['senses']);
+            foreach ($senseParts as $sense) {
+                $sense = trim($sense);
+                if (!empty($sense)) {
+                    $senses[] = $sense;
+                }
+            }
+        }
+
+        return compact('skills', 'senses');
+    }
 
     // Extrait et prépare les données du formulaire
     private function getFormData(): array
     {
         return [
-            'card_size' => (int) ($_POST['card_size'] ?? 1),
+            'card_size' => (int) ($_POST['card_size'] ?? 2),
             'name' => trim($_POST['name'] ?? ''),
             'size' => $_POST['size'] ?? '',
             'type' => trim($_POST['type'] ?? ''),
@@ -740,73 +866,41 @@ class MonsterController
         return $actions;
     }
 
-    // Traite l'upload d'une image unique: validate, name safely, store on disk, report filename
+    /**
+     * Upload monster image using centralized FileUploadService
+     * 
+     * Delegates to FileUploadService for consistent security and validation.
+     * Used for both main monster images and lair action images.
+     * 
+     * @param array $file The $_FILES array element
+     * @param string $uploadDir Subdirectory (default 'monsters', can be 'lair')
+     * @return array Result ['success' => bool, 'error' => string|null, 'filename' => string|null]
+     */
     private function uploadImage($file, $uploadDir = 'monsters'): array
     {
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        $allowedMime = [
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/gif'  => 'gif',
-            'image/webp' => 'webp'
-        ];
-
-        // Vérification de l'erreur d'upload
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return [
-                'success' => false,
-                'error' => 'Erreur lors du téléchargement du fichier.'
+        $result = $this->fileUploadService->upload($file, $uploadDir);
+        
+        // Convert error messages for consistency (English from service → French for display)
+        if (!$result['success']) {
+            $errorMap = [
+                'File upload error:' => 'Erreur lors du téléchargement du fichier',
+                'File too large' => 'Le fichier est trop volumineux (max 5 Mo)',
+                'Invalid file type' => 'Type de fichier non autorisé',
+                'Failed to save' => 'Impossible de sauvegarder l\'image'
             ];
+            
+            $translatedError = 'Erreur lors du téléchargement du fichier.';
+            foreach ($errorMap as $enKey => $frValue) {
+                if (strpos($result['error'], $enKey) !== false) {
+                    $translatedError = $frValue . '.';
+                    break;
+                }
+            }
+            
+            return ['success' => false, 'error' => $translatedError];
         }
-
-        // Vérification de la taille
-        if ($file['size'] > $maxSize) {
-            return [
-                'success' => false,
-                'error' => 'Le fichier est trop volumineux (max 5 Mo).'
-            ];
-        }
-
-        // Vérification du type MIME réel
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);
-
-        if (!array_key_exists($mime, $allowedMime)) {
-            return [
-                'success' => false,
-                'error' => 'Type de fichier non autorisé.'
-            ];
-        }
-
-        // Génération d'un nom de fichier unique et sécurisé
-        $extension = $allowedMime[$mime];
-        // Hybrid name: random prefix + truncated, sanitized original name
-        $originalName = pathinfo($file['name'], PATHINFO_FILENAME);
-        $sanitizedName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);
-        $truncatedName = substr($sanitizedName, 0, 20);
-        $uniqueId = bin2hex(random_bytes(12));
-        $uniqueName = $uniqueId . '_' . $truncatedName . '.' . $extension;
-
-        // Création du dossier s'il n'existe pas
-        $uploadPath = __DIR__ . '/../../public/uploads/' . $uploadDir . '/';
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-
-        $destination = $uploadPath . $uniqueName;
-
-        // Déplacement du fichier
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            return [
-                'success' => false,
-                'error' => 'Impossible de sauvegarder l\'image.'
-            ];
-        }
-
-        return [
-            'success' => true,
-            'filename' => $uniqueName
-        ];
+        
+        return ['success' => true, 'filename' => $result['filename']];
     }
 
     // Display monster creation type selection page
@@ -820,32 +914,16 @@ class MonsterController
         $randomBoss = null;
 
         if (is_array($allPublic) && !empty($allPublic)) {
-            // Robust filters with image requirement for preview:
-            // - Prefer card_size when present: 2 = small, 1 = boss
-            // - Fallback to is_legendary when card_size is missing/0
-            // - Require image_fullbody to avoid blank preview backs
-            $hasImage = function ($m) {
-                return !empty($m['image_fullbody']);
-            };
-            $isSmall = function ($m) use ($hasImage) {
-                if (!$hasImage($m)) return false;
-                if (isset($m['card_size']) && (int)$m['card_size'] > 0) {
-                    return (int)$m['card_size'] === 2;
-                }
-                // Fallback: treat non-legendary as small
-                return isset($m['is_legendary']) ? ((int)$m['is_legendary'] === 0) : true;
-            };
-            $isBoss = function ($m) use ($hasImage) {
-                if (!$hasImage($m)) return false;
-                if (isset($m['card_size']) && (int)$m['card_size'] > 0) {
-                    return (int)$m['card_size'] === 1;
-                }
-                // Fallback: treat legendary as boss
-                return isset($m['is_legendary']) ? ((int)$m['is_legendary'] === 1) : false;
-            };
+            // Differentiate previews by legendary status only:
+            // - Small preview: non-legendary monsters (is_legendary = 0)
+            // - Boss preview: legendary monsters (is_legendary = 1)
+            $smalls = array_values(array_filter($allPublic, function ($m) {
+                return isset($m['is_legendary']) && (int)$m['is_legendary'] === 0;
+            }));
 
-            $smalls = array_values(array_filter($allPublic, $isSmall));
-            $bosses = array_values(array_filter($allPublic, $isBoss));
+            $bosses = array_values(array_filter($allPublic, function ($m) {
+                return isset($m['is_legendary']) && (int)$m['is_legendary'] === 1;
+            }));
 
             if (!empty($smalls)) {
                 $randomSmall = $smalls[array_rand($smalls)];
@@ -858,9 +936,31 @@ class MonsterController
         // Include mini card CSS for the preview templates
         $extraStyles = ['/css/monster-card-mini.css'];
 
+        // Random lair card preview
+        $lairModel = new LairCard();
+        $randomLair = $lairModel->getRandom();
+
         // Expose variables to the view
         // $randomSmall and $randomBoss will be available in the required file
         require_once __DIR__ . '/../views/monster/create_select.php';
+    }
+
+    // Combined view: My Monsters + My Lair Cards
+    public function myCards()
+    {
+        $this->ensureAuthenticated();
+
+        $userId = $_SESSION['user']['u_id'];
+        $monsters = $this->monsterModel->getByUser($userId);
+
+        // Load lair cards via model
+        $lairModel = new LairCard();
+        $lairCards = $lairModel->getByUser($userId);
+
+        // Include mini-card styles for monster previews
+        $extraStyles = ['/css/monster-card-mini.css'];
+
+        require_once __DIR__ . '/../views/dashboard/my-cards.php';
     }
 
     // Create boss monster

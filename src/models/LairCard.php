@@ -31,6 +31,21 @@ class LairCard
     }
 
     /**
+     * Get a random lair card (any user), with JSON fields deserialized.
+     * Useful for small previews.
+     */
+    public function getRandom()
+    {
+        $sql = "SELECT * FROM lair_card ORDER BY RAND() LIMIT 1";
+        $stmt = $this->db->query($sql);
+        $card = $stmt->fetch();
+        if ($card) {
+            $this->deserializeJsonFields($card);
+        }
+        return $card ?: null;
+    }
+
+    /**
      * Get all lair cards for a specific user
      * 
      * For beginners:
@@ -213,6 +228,54 @@ class LairCard
             // No lair actions? Set to empty array
             $card['lair_actions'] = [];
         }
+    }
+
+    /**
+     * Get all lair cards with optional filtering and sorting
+     * 
+     * @param string $orderBy Sort order: 'random', 'newest', 'oldest', 'most_liked'
+     * @param string|null $search Search term for lair name or monster name
+     * @return array Array of lair cards
+     */
+    public function getAllFiltered($orderBy = 'newest', $search = null)
+    {
+        $sql = "SELECT * FROM lair_card WHERE 1=1";
+        $params = [];
+        
+        // Add search filter if provided
+        if (!empty($search)) {
+            $sql .= " AND (lair_name LIKE :search OR monster_name LIKE :search)";
+            $params[':search'] = '%' . $search . '%';
+        }
+        
+        // Add sorting
+        switch ($orderBy) {
+            case 'random':
+                $sql .= " ORDER BY RAND()";
+                break;
+            case 'oldest':
+                $sql .= " ORDER BY created_at ASC";
+                break;
+            case 'most_liked':
+                // Lair cards don't have likes yet, default to newest
+                $sql .= " ORDER BY created_at DESC";
+                break;
+            case 'newest':
+            default:
+                $sql .= " ORDER BY created_at DESC";
+                break;
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $cards = $stmt->fetchAll();
+        
+        // Deserialize JSON fields for each card
+        foreach ($cards as &$card) {
+            $this->deserializeJsonFields($card);
+        }
+        
+        return $cards;
     }
 
     /**

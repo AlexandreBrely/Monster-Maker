@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\LairCard;
+use App\Services\FileUploadService;
 
 /**
  * Lair Card Controller
@@ -21,11 +22,14 @@ use App\Models\LairCard;
 class LairCardController
 {
     private $lairCardModel; // Model for database operations
+    private $fileUploadService;
 
     public function __construct()
     {
         // Create model instance when controller is created
         $this->lairCardModel = new LairCard();
+        // Instantiate file upload service (handles all file uploads)
+        $this->fileUploadService = new FileUploadService();
     }
 
     /**
@@ -237,45 +241,17 @@ class LairCardController
     /**
      * Upload landscape image for lair card back
      */
+    /**
+     * Upload lair card image using centralized FileUploadService
+     * 
+     * Delegates to FileUploadService for consistent security and validation.
+     * All lair images follow same pattern as other uploads: validate, name safely, store.
+     * 
+     * @param array $file The $_FILES array element
+     * @return array Result ['success' => bool, 'error' => string|null, 'filename' => string|null]
+     */
     private function uploadImage($file)
     {
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        $allowedMime = [
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/gif'  => 'gif',
-            'image/webp' => 'webp'
-        ];
-
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'error' => 'Upload error'];
-        }
-
-        if ($file['size'] > $maxSize) {
-            return ['success' => false, 'error' => 'File too large (max 5MB)'];
-        }
-
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);
-
-        if (!array_key_exists($mime, $allowedMime)) {
-            return ['success' => false, 'error' => 'Invalid file type'];
-        }
-
-        $extension = $allowedMime[$mime];
-        $uniqueName = bin2hex(random_bytes(8)) . '_lair.' . $extension;
-
-        $uploadPath = __DIR__ . '/../../public/uploads/lair/';
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-
-        $destination = $uploadPath . $uniqueName;
-
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            return ['success' => false, 'error' => 'Failed to save image'];
-        }
-
-        return ['success' => true, 'filename' => $uniqueName];
+        return $this->fileUploadService->upload($file, 'lair');
     }
 }

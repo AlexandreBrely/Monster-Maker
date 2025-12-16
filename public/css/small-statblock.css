@@ -35,8 +35,8 @@
     background: #fff;
     border: 3px solid #c8c8c8;  /* Match front card border */
     border-radius: 2px;         /* Match front card corner radius */
-    width: 2.48in;    /* Playing card width  63 mm*/
-    height: 3.46in;   /* Playing card height 88 mm*/
+    width: 2.5in;    /* Playing card width  63 mm*/
+    height: 3.5in;   /* Playing card height 88 mm*/
     display: inline-flex;
     flex-direction: column;
     vertical-align: top;
@@ -75,8 +75,8 @@
     border: 3px solid #c8c8c8;  /* Light grey border, thicker for durability */
     border-radius: 2px;
     padding: 6px;      /* Inner padding to protect content when trimming/handling */
-    width: 2.48in;    /* Playing card width  63 mm*/
-    height: 3.46in;   /* Playing card height 88 mm*/
+    width: 2.5in;    /* Playing card width  63 mm*/
+    height: 3.5in;   /* Playing card height 88 mm*/
     margin: 4px;     /* Small margin for print safety */
     font-family: "Nunito", sans-serif;
     box-shadow: none;

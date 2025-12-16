@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Models\User;
+use App\Models\Collection;
+use App\Services\FileUploadService;
 
 /**
  * AuthController
@@ -23,11 +25,17 @@ use App\Models\User;
 class AuthController
 {
     private $userModel;
+    private $collectionModel;
+    private $fileUploadService;
 
     public function __construct()
     {
         // Instantiate the User model (delegates data access and validation)
         $this->userModel = new User();
+        // Instantiate Collection model (for creating default collection on registration)
+        $this->collectionModel = new Collection();
+        // Instantiate file upload service (handles all file uploads)
+        $this->fileUploadService = new FileUploadService();
     }
 
     /**
@@ -165,7 +173,15 @@ class AuthController
                 
                 // Handle different return values from User->create()
                 if ($result === true) {
-                    // Success: redirect to login page
+                    // Success: Get the new user's ID to create default collection
+                    $newUser = $this->userModel->findByEmail($data['email']);
+                    
+                    if ($newUser) {
+                        // Create default "To Print" collection for new user
+                        $this->collectionModel->createDefaultCollection($newUser['u_id']);
+                    }
+                    
+                    // Redirect to login page
                     header('Location: index.php?url=login');
                     exit;
                 } elseif ($result === 'username') {
@@ -368,71 +384,39 @@ class AuthController
         }
     }
 
-    // Traite l'upload d'avatar
+    /**
+     * Upload avatar using centralized FileUploadService
+     * 
+     * Delegates to FileUploadService for consistent security and validation.
+     * All avatar uploads follow same pattern: validate MIME type, generate unique name, save.
+     * 
+     * @param array $file The $_FILES['avatar'] array
+     * @return array Result ['success' => bool, 'error' => string|null, 'filename' => string|null]
+     */
     private function uploadAvatar($file): array
     {
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        $allowedMime = [
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/gif'  => 'gif',
-            'image/webp' => 'webp'
-        ];
-
-        // Vérification de l'erreur d'upload
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return [
-                'success' => false,
-                'error' => 'Erreur lors du téléchargement du fichier.'
+        $result = $this->fileUploadService->upload($file, 'avatars');
+        
+        // Convert error messages back to French for consistency with existing code
+        if (!$result['success']) {
+            $errorMap = [
+                'File upload error:' => 'Erreur lors du téléchargement du fichier',
+                'File too large' => 'Le fichier est trop volumineux (max 5 Mo)',
+                'Invalid file type' => 'Type de fichier non autorisé',
+                'Failed to save' => 'Impossible de sauvegarder l\'image'
             ];
+            
+            $translatedError = 'Erreur lors du téléchargement du fichier.';
+            foreach ($errorMap as $enKey => $frValue) {
+                if (strpos($result['error'], $enKey) !== false) {
+                    $translatedError = $frValue . '.';
+                    break;
+                }
+            }
+            
+            return ['success' => false, 'error' => $translatedError];
         }
-
-        // Vérification de la taille
-        if ($file['size'] > $maxSize) {
-            return [
-                'success' => false,
-                'error' => 'Le fichier est trop volumineux (max 5 Mo).'
-            ];
-        }
-
-        // Vérification du type MIME réel
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);
-
-        if (!array_key_exists($mime, $allowedMime)) {
-            return [
-                'success' => false,
-                'error' => 'Type de fichier non autorisé.'
-            ];
-        }
-
-        // Génération d'un nom de fichier unique et sécurisé
-        $extension = $allowedMime[$mime];
-        $originalName = pathinfo($file['name'], PATHINFO_FILENAME);
-        $sanitizedName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);
-        $truncatedName = substr($sanitizedName, 0, 20);
-        $uniqueId = bin2hex(random_bytes(8));
-        $uniqueName = $uniqueId . '_' . $truncatedName . '.' . $extension;
-
-        // Création du dossier s'il n'existe pas
-        $uploadPath = __DIR__ . '/../../public/uploads/avatars/';
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-
-        $destination = $uploadPath . $uniqueName;
-
-        // Déplacement du fichier
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            return [
-                'success' => false,
-                'error' => 'Impossible de sauvegarder l\'image.'
-            ];
-        }
-
-        return [
-            'success' => true,
-            'filename' => $uniqueName
-        ];
+        
+        return ['success' => true, 'filename' => $result['filename']];
     }
 }

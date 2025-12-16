@@ -26,6 +26,8 @@ require_once ROOT . '/src/views/templates/navbar.php';
     <?php endif; ?>
     
     <form action="index.php?url=create_small" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="is_legendary" value="0">
+        <input type="hidden" name="card_size" value="2">
         <!-- BASIC IDENTIFICATION -->
         <div class="mb-3">
             <label for="name" class="form-label">Monster Name <span class="text-danger">*</span></label>
@@ -236,10 +238,7 @@ require_once ROOT . '/src/views/templates/navbar.php';
             </div>
         </div>
         <!-- IMAGES -->
-        <div class="mb-3">
-            <label for="image_portrait" class="form-label">Portrait Image <span class="text-muted">(optional)</span></label>
-            <input type="file" class="form-control" id="image_portrait" name="image_portrait" accept="image/*">
-        </div>
+        <!-- Portrait image removed for small monsters; use full-body image only for back side display -->
         <div class="mb-3">
             <label for="image_fullbody" class="form-label">Fullbody Image <span class="text-muted">(optional)</span></label>
             <input type="file" class="form-control" id="image_fullbody" name="image_fullbody" accept="image/*">

@@ -231,6 +231,75 @@ class Monster
     }
 
     /**
+     * Get all public monsters with filters and sorting
+     * 
+     * @param string $orderBy Sort type: 'random', 'newest', 'oldest', 'most_liked'
+     * @param int|null $userId Filter by specific user ID (null = all public)
+     * @param string|null $search Search by monster name
+     * @param string|null $size Filter by size
+     * @param string|null $type Filter by type
+     * @return array Array of monsters with like_count included
+     */
+    public function getAllFiltered($orderBy = 'newest', $userId = null, $search = null, $size = null, $type = null): array
+    {
+        $sql = "SELECT m.*, COALESCE(like_counts.count, 0) as like_count 
+                FROM monster m 
+                LEFT JOIN (
+                    SELECT monster_id, COUNT(*) as count 
+                    FROM monster_likes 
+                    GROUP BY monster_id
+                ) like_counts ON m.monster_id = like_counts.monster_id 
+                WHERE m.is_public = 1";
+        
+        $params = [];
+        
+        // Filter by name search
+        if ($search !== null && $search !== '') {
+            $sql .= " AND m.name LIKE :search";
+            $params[':search'] = '%' . $search . '%';
+        }
+        
+        // Filter by size
+        if ($size !== null && $size !== '') {
+            $sql .= " AND m.size = :size";
+            $params[':size'] = $size;
+        }
+        
+        // Filter by type
+        if ($type !== null && $type !== '') {
+            $sql .= " AND m.type = :type";
+            $params[':type'] = $type;
+        }
+        
+        // Filter by user if specified
+        if ($userId !== null) {
+            $sql .= " AND m.u_id = :userId";
+            $params[':userId'] = $userId;
+        }
+        
+        // Apply ordering
+        switch ($orderBy) {
+            case 'random':
+                $sql .= " ORDER BY RAND()";
+                break;
+            case 'oldest':
+                $sql .= " ORDER BY m.created_at ASC";
+                break;
+            case 'most_liked':
+                $sql .= " ORDER BY like_count DESC, m.created_at DESC";
+                break;
+            case 'newest':
+            default:
+                $sql .= " ORDER BY m.created_at DESC";
+                break;
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Create a new monster in the database.
      * 
      * This is the largest method in the Monster class and demonstrates several patterns:
@@ -353,7 +422,7 @@ class Monster
                 ':lair_actions' => $data['lair_actions'] ?? '',
                 ':image_portrait' => $data['image_portrait'],
                 ':image_fullbody' => $data['image_fullbody'],
-                ':card_size' => $data['card_size'] ?? 1,
+                ':card_size' => $data['card_size'] ?? 2,
                 ':is_public' => $data['is_public'] ?? 0,
                 ':u_id' => $userId
             ]);

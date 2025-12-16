@@ -64,14 +64,31 @@ require_once ROOT . '/src/views/templates/navbar.php';
         </div>
     </div>
 
-    <!-- Lair Card CTA: Centered below the two monster cards -->
+    <!-- Lair Card CTA: Centered below the two monster cards with mini preview -->
     <div class="row mt-2 mb-4">
         <div class="col-12 d-flex justify-content-center">
-            <div class="card shadow-sm" style="max-width: 520px; width: 100%;">
-                <div class="card-body text-center">
-                    <h4 class="card-title">Lair Card</h4>
-                    <p class="card-text">Create a landscape lair action card with initiative, actions, and regional effects.</p>
-                    <a href="index.php?url=lair-card-create" class="btn btn-outline-secondary btn-lg">Create Lair Card</a>
+            <div class="card shadow-sm" style="max-width: 560px; width: 100%;">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h4 class="card-title mb-0">Lair Card</h4>
+                        <small class="text-muted">Landscape lair actions and regional effects</small>
+                    </div>
+
+                    <div class="d-flex justify-content-center mb-3">
+                        <div style="max-width: 420px; width: 100%;">
+                            <?php if (!empty($randomLair)): ?>
+                                <?php $lair = $randomLair; require ROOT . '/src/views/templates/lair-card-mini.php'; ?>
+                            <?php else: ?>
+                                <div class="bg-light border rounded p-4 text-center" style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
+                                    <span class="text-muted">No lair cards yet</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="index.php?url=lair-card-create" class="btn btn-outline-secondary btn-lg">Create Lair Card</a>
+                    </div>
                 </div>
             </div>
         </div>
