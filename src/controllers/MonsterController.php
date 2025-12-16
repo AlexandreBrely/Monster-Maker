@@ -812,6 +812,54 @@ class MonsterController
     // Display monster creation type selection page
     public function selectCreate()
     {
+        // Load a couple of random public monsters to preview on the selection page
+        // Use existing model instance to retrieve public monsters
+        $allPublic = $this->monsterModel->getAll();
+
+        $randomSmall = null;
+        $randomBoss = null;
+
+        if (is_array($allPublic) && !empty($allPublic)) {
+            // Robust filters with image requirement for preview:
+            // - Prefer card_size when present: 2 = small, 1 = boss
+            // - Fallback to is_legendary when card_size is missing/0
+            // - Require image_fullbody to avoid blank preview backs
+            $hasImage = function ($m) {
+                return !empty($m['image_fullbody']);
+            };
+            $isSmall = function ($m) use ($hasImage) {
+                if (!$hasImage($m)) return false;
+                if (isset($m['card_size']) && (int)$m['card_size'] > 0) {
+                    return (int)$m['card_size'] === 2;
+                }
+                // Fallback: treat non-legendary as small
+                return isset($m['is_legendary']) ? ((int)$m['is_legendary'] === 0) : true;
+            };
+            $isBoss = function ($m) use ($hasImage) {
+                if (!$hasImage($m)) return false;
+                if (isset($m['card_size']) && (int)$m['card_size'] > 0) {
+                    return (int)$m['card_size'] === 1;
+                }
+                // Fallback: treat legendary as boss
+                return isset($m['is_legendary']) ? ((int)$m['is_legendary'] === 1) : false;
+            };
+
+            $smalls = array_values(array_filter($allPublic, $isSmall));
+            $bosses = array_values(array_filter($allPublic, $isBoss));
+
+            if (!empty($smalls)) {
+                $randomSmall = $smalls[array_rand($smalls)];
+            }
+            if (!empty($bosses)) {
+                $randomBoss = $bosses[array_rand($bosses)];
+            }
+        }
+
+        // Include mini card CSS for the preview templates
+        $extraStyles = ['/css/monster-card-mini.css'];
+
+        // Expose variables to the view
+        // $randomSmall and $randomBoss will be available in the required file
         require_once __DIR__ . '/../views/monster/create_select.php';
     }
 

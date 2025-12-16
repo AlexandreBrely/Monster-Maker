@@ -21,9 +21,17 @@ require_once ROOT . '/src/views/templates/navbar.php';
                     <h4 class="card-title">Small Monster</h4>
                     <p class="card-text">A compact statblock for minions, animals, or simple NPCs. Fast to create and easy to use at the table.</p>
                     
-                    <!-- Example card placeholder -->
-                    <div class="bg-light border rounded p-4 text-center mb-3" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                        <span class="text-muted">[Small Monster Example Coming Soon]</span>
+                    <!-- Example mini statblock (random public small monster) -->
+                    <div class="d-flex justify-content-center mb-3">
+                        <?php if (!empty($randomSmall)): ?>
+                            <div style="max-width: 320px;">
+                                <?php $monster = $randomSmall; require ROOT . '/src/views/templates/monster-card-mini.php'; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="bg-light border rounded p-4 text-center" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                                <span class="text-muted">No public small monsters yet</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     
                     <a href="index.php?url=create_small" class="btn btn-primary btn-lg w-100">Create Small Monster</a>
@@ -37,12 +45,33 @@ require_once ROOT . '/src/views/templates/navbar.php';
                     <h4 class="card-title">Boss Monster</h4>
                     <p class="card-text">A full-featured statblock for legendary monsters, villains, or epic encounters. Includes legendary actions, lair actions, and more.</p>
                     
-                    <!-- Example card placeholder -->
-                    <div class="bg-light border rounded p-4 text-center mb-3" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                        <span class="text-muted">[Boss Monster Example Coming Soon]</span>
+                    <!-- Example mini statblock (random public boss monster) -->
+                    <div class="d-flex justify-content-center mb-3">
+                        <?php if (!empty($randomBoss)): ?>
+                            <div style="max-width: 320px;">
+                                <?php $monster = $randomBoss; require ROOT . '/src/views/templates/monster-card-mini.php'; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="bg-light border rounded p-4 text-center" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                                <span class="text-muted">No public boss monsters yet</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     
                     <a href="index.php?url=create_boss" class="btn btn-danger btn-lg w-100">Create Boss Monster</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lair Card CTA: Centered below the two monster cards -->
+    <div class="row mt-2 mb-4">
+        <div class="col-12 d-flex justify-content-center">
+            <div class="card shadow-sm" style="max-width: 520px; width: 100%;">
+                <div class="card-body text-center">
+                    <h4 class="card-title">Lair Card</h4>
+                    <p class="card-text">Create a landscape lair action card with initiative, actions, and regional effects.</p>
+                    <a href="index.php?url=lair-card-create" class="btn btn-outline-secondary btn-lg">Create Lair Card</a>
                 </div>
             </div>
         </div>
