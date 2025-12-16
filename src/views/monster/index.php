@@ -7,6 +7,7 @@
  * - $monsters : array of monsters
  */
 ?>
+<?php $extraStyles = ['/css/monster-card-mini.css']; ?>
 <?php require_once __DIR__ . '/../templates/header.php'; ?>
 <?php require_once __DIR__ . '/../templates/navbar.php'; ?>
 
@@ -66,57 +67,10 @@
             No monsters found.
         </div>
     <?php else: ?>
-        <div class="row">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             <?php foreach ($monsters as $monster): ?>
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <!-- Image -->
-                        <?php if (!empty($monster['image_portrait'])): ?>
-                            <img src="/public/uploads/monsters/<?php echo htmlspecialchars($monster['image_portrait']); ?>" 
-                                 alt="<?php echo htmlspecialchars($monster['name']); ?>" 
-                                 class="card-img-top" style="height: 250px; object-fit: cover;">
-                        <?php else: ?>
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
-                                 style="height: 250px;">
-                                <span class="text-muted">No image</span>
-                            </div>
-                        <?php endif; ?>
-
-                        <div class="card-body">
-                            <!-- Monster title -->
-                            <h5 class="card-title"><?php echo htmlspecialchars($monster['name']); ?></h5>
-
-                            <!-- Quick info -->
-                            <p class="card-text text-muted small">
-                                <strong><?php echo htmlspecialchars($monster['size']); ?></strong> 
-                                <?php echo htmlspecialchars($monster['type']); ?> • CR <?php echo htmlspecialchars($monster['challenge_rating']); ?>
-                            </p>
-
-                            <!-- Main stats -->
-                            <div class="row g-2 mb-3 text-center" style="font-size: 0.9rem;">
-                                <div class="col-6">
-                                    <small class="text-muted d-block">AC</small>
-                                    <span class="fw-bold"><?php echo (int)$monster['ac']; ?></span>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted d-block">HP</small>
-                                    <span class="fw-bold"><?php echo (int)$monster['hp']; ?></span>
-                                </div>
-                            </div>
-
-                            <!-- Short description -->
-                            <p class="card-text" style="font-size: 0.9rem;">
-                                <?php echo htmlspecialchars(substr($monster['traits'], 0, 100)); ?>...
-                            </p>
-                        </div>
-
-                        <!-- Link button -->
-                        <div class="card-footer bg-white">
-                            <a href="index.php?url=monster&id=<?php echo $monster['monster_id']; ?>" class="btn btn-primary btn-sm w-100">
-                                View Details
-                            </a>
-                        </div>
-                    </div>
+                <div class="col">
+                    <?php require __DIR__ . '/../templates/monster-card-mini.php'; ?>
                 </div>
             <?php endforeach; ?>
         </div>

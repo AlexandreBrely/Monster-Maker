@@ -1,0 +1,485 @@
+/* ===== SMALL MONSTER STATBLOCK STYLES ===== */
+
+/* ACTION BUTTONS BAR: Print, Edit, Delete buttons - all in one line */
+.action-buttons-bar {
+    display: flex;
+    gap: 8px;               /* Small gap between buttons */
+    justify-content: center;
+    margin: 0 auto 20px auto;
+    padding: 10px 0;
+    flex-wrap: wrap;
+}
+
+.action-buttons-bar .btn {
+    white-space: nowrap;    /* Keep button text on one line */
+}
+
+.action-buttons-bar .btn-sm {
+    padding: 4px 10px;      /* Small padding for compact buttons */
+    font-size: 0.925rem;    /* Small font size */
+}
+
+/* LAYOUT: Container that holds both the FRONT CARD (.statblock) and BACK CARD (.card-back) side-by-side */
+.card-display-wrapper {
+    display: flex;
+    gap: 30px;              /* Clear gap between front and back cards */
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0 auto;
+    padding: 0 20px;
+    max-width: 100%;
+}
+
+/* CARD BACK: The right-side card showing the monster full body image */
+.card-back {
+    background: #fff;
+    border: 3px solid #c8c8c8;  /* Match front card border */
+    border-radius: 2px;         /* Match front card corner radius */
+    width: 2.48in;    /* Playing card width  63 mm*/
+    height: 3.46in;   /* Playing card height 88 mm*/
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: top;
+    overflow: hidden;
+    position: relative;
+    box-shadow: none;          /* Match front card (no shadow) */
+    padding: 6px;              /* Match front card inner padding */
+    margin: 4px;               /* Match front card outer margin */
+    box-sizing: border-box;
+}
+
+/* Full body image inside the back card - smart cropping to fit portrait orientation */
+.card-back-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;  /* Crops image to fill card while maintaining aspect ratio */
+    object-position: center center;  /* Centers the image, adjust to 'center top' if you want to prioritize head/top */
+}
+
+/* Placeholder when no portrait image exists */
+.card-back-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: 3.05rem;
+}
+
+/* ===== FRONT CARD: Small monster statblock container ===== */
+.small-statblock,
+.statblock {
+    background: #fff;
+    border: 3px solid #c8c8c8;  /* Light grey border, thicker for durability */
+    border-radius: 2px;
+    padding: 6px;      /* Inner padding to protect content when trimming/handling */
+    width: 2.48in;    /* Playing card width  63 mm*/
+    height: 3.46in;   /* Playing card height 88 mm*/
+    margin: 4px;     /* Small margin for print safety */
+    font-family: "Nunito", sans-serif;
+    box-shadow: none;
+    overflow: hidden;
+    font-size: 0.70rem;  /* Base font size for entire card */
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: top;
+    box-sizing: border-box;
+}
+
+/* Compact mode placeholder (kept for future use) */
+.small-statblock.compact,
+.statblock.compact {
+        overflow: visible;
+    }
+
+/* Override natural element margins for compact display */
+.statblock p, .statblock h3, .statblock h6 {
+    margin: 0;      /* Remove all natural margins */
+    padding: 0;     /* Remove all natural padding */
+}
+
+/* ===== HEADER SECTION (Monster Name, Type, CR/XP) ===== */
+/* Grid layout: [Name/Subtitle on left] [CR/XP on right] */
+.statblock-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 2px;
+    border-bottom: 1px solid #ddd;
+    padding: 3px 2px 0px 1px;  /* Added top padding for breathing room */
+    margin-bottom: 0;
+}
+
+/* MONSTER NAME - Main title at top of card */
+.statblock-title {
+    font-size: 0.54rem;    /* Slightly bigger than section titles */
+    font-weight: 550;
+    color: #000;
+    margin: 2px;
+    text-align: left;
+    font-family: "New Rocker", system-ui;
+}
+
+/* MONSTER TYPE/SIZE/ALIGNMENT - Subtitle under name */
+.statblock-subtitle {
+    font-size: 0.39rem;    /* Compact subtitle */
+    font-style: italic;
+    color: #555;
+    margin: 0px 0 2px 0;   /* Added bottom margin for breathing room */
+    text-align: left;
+    padding: 0;
+    line-height: 1.0;
+}
+
+/* CR AND XP - Right side of header */
+.header-cr {
+    font-size: 0.53rem;    /* Tighter CR */
+    font-weight: 700;
+    color: #333;
+    text-align: right;
+}
+.header-cr small {
+    font-size: 0.45rem;    /* Tighter XP */
+    font-weight: 600;
+    color: #666;
+}
+
+/* ===== QUICK STATS BAR: AC, HP, Speed ===== */
+/* One-line display: [AC 15 (notes)] [HP 45 (7d10+14)] [Speed 40 ft.] */
+.statblock-stats {
+    display: flex;
+    gap: 6px;      /* Better spacing between stat items */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 0.41rem;  /* Slightly larger for readability */
+    font-weight: 500;
+    flex-wrap: wrap;
+    justify-content: space-between;  /* Spread stats across width */
+}
+
+.stat-line {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;  /* Better spacing within each stat group */
+}
+
+/* Extra outside margins for AC and HP groups */
+.statblock-stats .ac-block { margin-left: 6px; }
+.statblock-stats .hp-block { margin-right: 6px; }
+
+/* Center the Speed row across the full width to separate from abilities */
+.speed-block {
+    display: flex;        /* Override inline-flex */
+    width: 100%;
+    justify-content: center;
+    margin: 2px 0;        /* Subtle breathing room above/below */
+}
+
+/* AC LABEL - "AC" text */
+.stat-label {
+    font-weight: 700;
+    color: #333;
+    font-size: 0.41rem;    /* Labels aligned to stat size */
+}
+
+/* AC VALUE - "15" number */
+.stat-value {
+    font-size: 0.41rem;    /* Values aligned to stat size */
+    font-weight: 600;
+    color: #333;
+}
+
+/* HP DETAIL - "(7d10+14)" or "Speed 40 ft." detail text / AC Notes */
+.stat-detail {
+    font-size: 0.35rem;    /* Notes smaller than labels/values */
+    font-weight: 400;
+    color: #666;
+}
+
+/* ===== MAIN CONTENT CONTAINER ===== */
+/* Wrapper for all content sections below header */
+.statblock-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;            /* Allow flex children to shrink within fixed card height */
+    padding: 4px 6px;  /* Added breathing room within the safer border */
+}
+
+/* ===== LEFT COLUMN: Ability Scores & Details ===== */
+.statblock-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;  /* No gap between sections */
+    flex-shrink: 0;          /* Prevent compression of top stats/details */
+}
+
+.statblock-top {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;               /* Light spacing between top blocks */
+}
+
+.basic-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;              /* Tight grouping of primary stats and abilities */
+}
+
+.skills-secondary {
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.skills-secondary .detail-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    column-gap: 4px;
+}
+
+.skills-secondary .detail-label {
+    margin-right: 0;
+}
+
+/* ===== ABILITY SCORE GRID: STR / DEX / CON / INT / WIS / CHA ===== */
+/* 6-column grid showing ability names and modifiers */
+.ability-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;      /* Minimal space between ability columns */
+    text-align: center;
+    margin: 0px 0;
+}
+
+.ability-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+/* ABILITY NAMES - "STR", "DEX", "CON", etc. */
+.ability-name {
+    font-weight: 700;
+    font-size: 0.45rem;    /* Ability abbreviation size */
+    color: #333;
+    letter-spacing: 0.1px;
+}
+
+/* ABILITY MODIFIERS - The numbers under ability names like "+2", "-1" */
+.ability-mod {
+    font-size: 0.45rem;    /* Match ability label size */
+    font-weight: 700;
+    color: #333;
+}
+
+/* SAVE BONUS - Displayed as " /+5" after ability modifier when monster has save proficiency */
+.save-bonus {
+    font-size: 0.43rem;     
+    color: #666;           /* Lighter color to differentiate from modifier */
+    vertical-align: baseline;
+}
+
+/* ===== DETAILS SECTION: Skills, Senses, Immunities, Resistances, Vulnerabilities ===== */
+/* Container for all detail items (Skills, Immunities, etc.) */
+.statblock-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;      /* No space between detail rows */
+    font-size: 0.37rem;  /* Smaller detail text */
+    line-height: 1.05;   /* Slightly more breathing room */
+    margin-top: 0px;
+}
+
+/* Individual detail row (one line for Skills, Senses, etc.) */
+.detail-item {
+    line-height: 1.05;  /* Ultra-tight */
+    margin-bottom: 0px;
+}
+
+/* DETAIL LABELS - "Skills:", "Immune:", "Resist:", "Vuln:", "Cond. Immune:", "Senses:", "Languages:" */
+/* These are the bold labels that appear before the values */
+.detail-label {
+    font-weight: 700;  /* Bolder */
+    font-style: normal;  /* Remove italic */
+    text-decoration: none;
+    color: #333;
+    font-size: 0.47rem;  /* Slightly larger than detail text */
+    margin-right: 3px;
+}
+
+/* ===== DIVIDERS ===== */
+/* Horizontal line separators between sections */
+.statblock-divider {
+    height: 1px;      /* Line thickness */
+    background: #ddd; /* Line color */
+    margin: 1px 0;    /* Space above/below divider */
+}
+
+.ability-grid-divider {
+    height: 1px;
+    background: #ddd;
+    margin: 1px 0 0 0;
+}
+
+/* ===== RIGHT COLUMN: Actions, Traits, Reactions ===== */
+.statblock-right {
+    display: block;
+    margin-top: auto;        /* Push actions block down when space allows */
+    flex-shrink: 0;          /* Keep bottom sections from squashing */
+}
+
+/* ===== SECTION STYLING ===== */
+/* Container for each action/reaction/trait block */
+.statblock-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;          /* No gap between title and entries */
+    margin-bottom: 1px; /* Space after each section block */
+}
+
+.section-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;          /* Space between title and its list */
+    margin-top: 6px;   /* Separation between consecutive sections */
+}
+
+/* ===== SECTION TITLES: "ACTIONS", "BONUS ACTIONS", "REACTIONS", "TRAITS" ===== */
+/* Titles with a centered divider after text */
+.section-title {
+    font-size: 0.43rem;     /* Slightly smaller for better proportion */
+    font-weight: 500;       /* Lighter weight for less imposing look */
+    color: #333;
+    background: transparent;
+    margin: 14px 0 0px 0;   /* Increased top margin for clearer separation */
+    padding: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #c0c0c0;
+}
+
+/* ===== ACTION/TRAIT ENTRIES ===== */
+/* Individual action, bonus action, reaction, or trait entry */
+.trait-entry, .action-entry {
+    line-height: 1.05;      /* Tighter line spacing */
+    margin-bottom: 0px;     /* No space between entries */
+}
+
+/* ===== ACTION/TRAIT NAME ===== */
+/* The bold title of the action: "Multiattack", "Fireball", "Parry" etc. */
+.entry-title {
+    font-weight: 700;      /* Bold */
+    font-style: italic;
+    color: #333;
+    font-size: 0.51rem;    /* Action/trait names - readable */
+}
+
+/* ===== ACTION/TRAIT DESCRIPTION TEXT ===== */
+/* The description that follows the title: "The creature can make..." */
+.entry-text {
+    color: #333;
+    font-size: 0.43rem;     /* Description text */
+    line-height: 1.15;      /* Roomier for readability */
+}
+
+.legendary-intro {
+    font-size: 0.67rem;
+    color: #333;
+    margin-bottom: 3px;
+    line-height: 1.25;
+}
+
+/* ===== PRINT STYLES ===== */
+/* Optimized styling for printing to actual cards */
+@media print {
+    body {
+        background: white;
+    }
+
+    /* Hide buttons when printing */
+    .action-buttons-bar {
+        display: none !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    /* Print layout: both cards on one line, then page break */
+    .card-display-wrapper {
+        display: flex;
+        gap: 0.25in;    /* Gap between front and back cards when printing */
+        page-break-inside: avoid;
+    }
+
+    /* Card dimensions and print-specific styling */
+    .statblock,
+    .statblock.compact,
+    .card-back {
+        border: 1px solid #999;
+        box-shadow: none;
+        page-break-inside: avoid;
+        width: 2.5in;    /* Playing card width 63 mm */
+        height: 3.5in;   /* Playing card height 88 mm*/
+        margin: 0;
+        padding: 0;
+    }
+
+    .statblock-container {
+        padding: 4px 8px;
+    }
+
+    .statblock-divider {
+        background: #999;  /* Darker divider lines when printed */
+    }
+
+    /* Page setup: 5.5in wide × 3.5in tall fits both cards (2.5 + 0.25 + 2.5) */
+    @page {
+        size: 5.5in 3.5in;  /* Custom page size for card printing */
+        margin: 0.25in;      /* Margin around edge of printed page */
+    }
+
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+
+    .statblock-section {
+        page-break-inside: avoid;
+        margin-bottom: 6px;
+    }
+}
+
+/* ===== RESPONSIVE DESIGN (Mobile/Tablet) ===== */
+@media (max-width: 768px) {
+    .statblock-container {
+        grid-template-columns: 1fr;
+    }
+
+    .statblock-portrait {
+        margin: 15px 0;
+    }
+
+    .statblock {
+        padding: 15px;
+    }
+
+    .section-title {
+        font-size: 1.03rem;
+    }
+}

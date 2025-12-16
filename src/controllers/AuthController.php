@@ -6,7 +6,19 @@ use App\Models\User;
 
 /**
  * AuthController
- * Gère l'authentification utilisateur (inscription, connexion, profil)
+ * Handles user authentication: registration, login, logout, and profile management.
+ * 
+ * Responsibilities:
+ * - Registration: Validate input, hash passwords, handle avatar uploads
+ * - Login: Verify credentials, create session
+ * - Profile: Edit username/email, change password, manage avatar
+ * - Logout: Destroy session
+ * 
+ * Security patterns used:
+ * - password_hash() / password_verify() for secure password handling
+ * - Session-based authentication ($_SESSION['user'])
+ * - Owner verification before profile updates
+ * - MIME-based file validation for avatars
  */
 class AuthController
 {
@@ -14,9 +26,14 @@ class AuthController
 
     public function __construct()
     {
+        // Instantiate the User model (delegates data access and validation)
         $this->userModel = new User();
     }
 
+    /**
+     * Ensure user is logged in; redirect to login if not.
+     * Use this in controller methods that require authentication.
+     */
     private function ensureAuthenticated()
     {
         if (!isset($_SESSION['user'])) {
@@ -25,9 +42,18 @@ class AuthController
         }
     }
 
-    // Affiche le formulaire de connexion
+    /**
+     * Display login form and handle POST submission.
+     * 
+     * Process:
+     * 1. Redirect if already logged in
+     * 2. On POST: validate email exists and password matches
+     * 3. If valid: create session and redirect to home
+     * 4. If invalid: display error and re-render form
+     */
     public function login()
     {
+        // Redirect logged-in users to home
         if (isset($_SESSION['user'])) {
             header('Location: index.php?url=home');
             exit;
@@ -37,15 +63,18 @@ class AuthController
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
 
+            // Find user by email; if not found or password wrong, show error
             $user = $this->userModel->findByEmail($email);
 
+            // password_verify() uses bcrypt to safely compare plaintext vs hashed password
             if (!$user || !password_verify($password, $user['u_password'])) {
                 $errors['login'] = "Invalid credentials.";
                 require_once __DIR__ . '/../views/auth/login.php';
                 return;
             }
 
-            // Connexion réussie : stocker en session
+            // Successful login: store minimal user data in session
+            // Session persists across requests and is destroyed on logout
             $_SESSION['user'] = [
                 'u_id' => $user['u_id'],
                 'u_username' => $user['u_name'],
@@ -60,9 +89,20 @@ class AuthController
         require_once __DIR__ . '/../views/auth/login.php';
     }
 
-    // Affiche le formulaire d'inscription
+    /**
+     * Display registration form and handle POST submission.
+     * 
+     * Process:
+     * 1. Validate username, email, password, confirmation
+     * 2. Upload profile picture (optional)
+     * 3. Hash password using bcrypt
+     * 4. Save user to database
+     * 5. Handle duplicate username/email errors
+     * 6. Redirect to login on success
+     */
     public function register()
     {
+        // Redirect logged-in users to home
         if (isset($_SESSION['user'])) {
             header('Location: index.php?url=home');
             exit;
@@ -78,10 +118,21 @@ class AuthController
 
             $errors = $this->userModel->validateRegister($data);
 
+            // Handle profile picture upload
+            $avatarFilename = null;
+            if (!empty($_FILES['profile_picture']['name'])) {
+                $uploadResult = $this->uploadAvatar($_FILES['profile_picture']);
+                if ($uploadResult['success']) {
+                    $avatarFilename = $uploadResult['filename'];
+                } else {
+                    $errors['avatar'] = $uploadResult['error'];
+                }
+            }
+
             if (empty($errors)) {
                 $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
-                $result = $this->userModel->create($data['username'], $data['email'], $hashedPassword);
+                $result = $this->userModel->create($data['username'], $data['email'], $hashedPassword, $avatarFilename);
                 
                 if ($result === true) {
                     header('Location: index.php?url=login');
@@ -162,7 +213,7 @@ class AuthController
                         $_SESSION['user']['u_avatar'] = $data['avatar'];
                     }
 
-                    header('Location: index.php?url=edit-profile');
+                    header('Location: index.php?url=edit-profile&success=1');
                     exit;
                 } else {
                     $errors['server'] = 'An error occurred while updating your profile';
@@ -229,6 +280,37 @@ class AuthController
         }
 
         require_once __DIR__ . '/../views/auth/settings.php';
+    }
+
+    // Delete user's avatar
+    public function deleteAvatar()
+    {
+        header('Content-Type: application/json');
+        $this->ensureAuthenticated();
+
+        $userId = $_SESSION['user']['u_id'];
+        $user = $this->userModel->findById($userId);
+
+        if (!$user || empty($user['u_avatar'])) {
+            echo json_encode(['success' => false, 'error' => 'No avatar to delete']);
+            return;
+        }
+
+        // Delete physical file
+        $avatarPath = __DIR__ . '/../../public/uploads/avatars/' . $user['u_avatar'];
+        if (file_exists($avatarPath)) {
+            unlink($avatarPath);
+        }
+
+        // Update database
+        $result = $this->userModel->updateProfile($userId, ['avatar' => '']);
+        
+        if ($result) {
+            $_SESSION['user']['u_avatar'] = '';
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Database update failed']);
+        }
     }
 
     // Traite l'upload d'avatar

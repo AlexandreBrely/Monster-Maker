@@ -1,4 +1,8 @@
 <?php
+// === Front Controller ===
+// This is the single entry point for all HTTP requests.
+// It bootstraps the app, then dispatches to the appropriate Controller.
+
 // Configuration de base
 define('ROOT', dirname(__DIR__));
 define('BASE_URL', '/');
@@ -6,9 +10,9 @@ define('BASE_URL', '/');
 // Démarrage de la session
 session_start();
 
-// Autoloader simple pour charger les classes automatiquement
+// Simple autoloader to load classes automatically
 spl_autoload_register(function ($class) {
-    // Remove 'App\' prefix from namespace
+    // Remove 'App\' prefix from namespace (our base namespace)
     $class = str_replace('App\\', '', $class);
     // Convert namespace separators to directory separators
     $file = ROOT . '/src/' . str_replace('\\', '/', $class) . '.php';
@@ -22,7 +26,7 @@ spl_autoload_register(function ($class) {
     }
 });
 
-// Récupérer l'URL demandée
+// Parse requested URL from query string (e.g., ?url=monster/show)
 $url = isset($_GET['url']) ? $_GET['url'] : 'home';
 $url = filter_var($url, FILTER_SANITIZE_URL);
 $url = explode('/', $url);
@@ -31,7 +35,7 @@ $url = explode('/', $url);
 $route = isset($url[0]) && $url[0] != '' ? $url[0] : 'home';
 $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
 
-// Router simple: mapper les routes vers les contrôleurs
+// Simple Router: map route keys to controllers
 // Format: 'route' => ['controller' => 'ControllerName', 'action' => 'methodName']
 $routes = [
     'home' => ['controller' => 'HomeController', 'action' => 'index'],
@@ -39,6 +43,7 @@ $routes = [
     'register' => ['controller' => 'AuthController', 'action' => 'register'],
     'logout' => ['controller' => 'AuthController', 'action' => 'logout'],
     'edit-profile' => ['controller' => 'AuthController', 'action' => 'editProfile'],
+    'delete-avatar' => ['controller' => 'AuthController', 'action' => 'deleteAvatar'],
     'settings' => ['controller' => 'AuthController', 'action' => 'settings'],
     'monsters' => ['controller' => 'MonsterController', 'action' => 'index'],
     'monster' => ['controller' => 'MonsterController', 'action' => 'handleMonsterRoute'],
@@ -47,11 +52,15 @@ $routes = [
     'create_boss' => ['controller' => 'MonsterController', 'action' => 'createBoss'],
     'create_small' => ['controller' => 'MonsterController', 'action' => 'createSmall'],
     'my-monsters' => ['controller' => 'MonsterController', 'action' => 'myMonsters'],
+    'my-lair-cards' => ['controller' => 'LairCardController', 'action' => 'myLairCards'],
+    'lair-card' => ['controller' => 'LairCardController', 'action' => 'show'],
+    'lair-card-create' => ['controller' => 'LairCardController', 'action' => 'create'],
+    'lair-card-store' => ['controller' => 'LairCardController', 'action' => 'store'],
     'cgu' => ['controller' => 'PagesController', 'action' => 'cgu'],
     'terms' => ['controller' => 'PagesController', 'action' => 'terms'],
 ];
 
-// Vérifier si la route existe
+// Resolve controller/action from the routes table
 if (isset($routes[$route])) {
     $controllerName = $routes[$route]['controller'];
     $action = $routes[$route]['action'];
@@ -65,7 +74,7 @@ if (isset($routes[$route])) {
 $controllerFile = ROOT . '/src/controllers/' . $controllerName . '.php';
 $controllerClass = 'App\\Controllers\\' . $controllerName;
 
-// Vérifier si le contrôleur existe
+// Load controller file and execute action if found; otherwise show 404
 if (file_exists($controllerFile)) {
     require_once $controllerFile;
     

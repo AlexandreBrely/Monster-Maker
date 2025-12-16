@@ -1,0 +1,228 @@
+/* ===== LAIR CARD STYLES (Horizontal Landscape Format) ===== */
+
+/* Container for front + back cards displayed side by side */
+.lair-card-wrapper {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 20px auto;
+    max-width: 100%;
+}
+
+/* FRONT CARD: Lair actions and regional effects (landscape orientation) */
+.lair-card-front {
+    background: #fff;
+    border: 3px solid #c8c8c8;
+    border-radius: 4px;
+    padding: 16px;
+    width: 5in;      /* Landscape width (A6 landscape: 5.8in × 4.1in) */
+    height: 3.5in;   /* Landscape height */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    overflow: hidden;
+    font-family: "Nunito", sans-serif;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header: Lair name, monster name, initiative count */
+.lair-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #333;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.lair-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    font-family: "New Rocker", system-ui;
+    line-height: 1.2;
+}
+
+.lair-subtitle {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #666;
+    margin: 2px 0 0 0;
+}
+
+.lair-initiative {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid #333;
+    border-radius: 4px;
+    padding: 4px 12px;
+    background: #f5f5f5;
+}
+
+.init-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.init-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+/* Lair description */
+.lair-description {
+    font-size: 0.7rem;
+    font-style: italic;
+    color: #555;
+    line-height: 1.3;
+    margin-bottom: 8px;
+}
+
+/* Divider line */
+.lair-divider {
+    height: 1px;
+    background: #ddd;
+    margin: 8px 0;
+}
+
+/* Section container */
+.lair-section {
+    margin-bottom: 10px;
+}
+
+.section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #8B0000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 6px 0;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #8B0000;
+}
+
+/* Lair action intro text */
+.lair-action-intro {
+    font-size: 0.7rem;
+    color: #333;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+/* Lair actions list */
+.lair-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lair-action-item {
+    font-size: 0.7rem;
+    line-height: 1.3;
+    color: #333;
+}
+
+.action-name {
+    font-weight: 700;
+    font-style: italic;
+    color: #000;
+}
+
+.action-desc {
+    color: #333;
+}
+
+/* Regional effects */
+.regional-effects-text {
+    font-size: 0.7rem;
+    line-height: 1.3;
+    color: #333;
+}
+
+/* BACK CARD: Landscape image of the lair */
+.lair-card-back {
+    background: #fff;
+    border: 3px solid #c8c8c8;
+    border-radius: 4px;
+    width: 5in;      /* Same dimensions as front */
+    height: 3.5in;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+.lair-back-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+}
+
+.lair-back-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #2c3e50 0%, #4a5568 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #cbd5e0;
+    font-size: 3rem;
+}
+
+.lair-back-placeholder p {
+    font-size: 1rem;
+    margin-top: 10px;
+    font-family: "New Rocker", system-ui;
+}
+
+/* Print styles */
+@media print {
+    .action-buttons-bar {
+        display: none !important;
+    }
+
+    .lair-card-wrapper {
+        gap: 0.25in;
+        page-break-inside: avoid;
+    }
+
+    .lair-card-front,
+    .lair-card-back {
+        border: 1px solid #999;
+        box-shadow: none;
+        width: 5in;
+        height: 3.5in;
+        margin: 0;
+        padding: 12px;
+    }
+
+    @page {
+        size: 10.5in 4in landscape;
+        margin: 0.25in;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .lair-card-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .lair-card-front,
+    .lair-card-back {
+        width: 90vw;
+        max-width: 600px;
+        height: auto;
+        min-height: 400px;
+    }
+}

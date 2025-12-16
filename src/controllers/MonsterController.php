@@ -14,9 +14,16 @@ class MonsterController
 
     public function __construct()
     {
+        // Instantiate the Monster model (data access layer)
+        // Controllers should delegate data operations to models
         $this->monsterModel = new Monster();
     }
 
+    // Fast guard: redirect visitors who are not logged in
+    /**
+     * Ensure a user is logged in before allowing access to protected routes.
+     * If not authenticated, redirects to login.
+     */
     private function ensureAuthenticated()
     {
         if (!isset($_SESSION['user']) || !isset($_SESSION['user']['u_id'])) {
@@ -27,6 +34,11 @@ class MonsterController
 
     // Affiche le formulaire de création de monstre
     // Main create logic (called by createBoss and createSmall)
+    /**
+     * Display create form (boss or small) and handle submission.
+     * Validates input, uploads images, delegates creation to the model.
+     * Uses guard clauses to early-return on validation/add-button cases.
+     */
     public function createForm($type = null)
     {
         $this->ensureAuthenticated();
@@ -52,7 +64,8 @@ class MonsterController
             if (!empty($_FILES['image_portrait']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_portrait'], 'monsters');
                 if ($imageResult['success']) {
-                    $images['portrait'] = $imageResult['filename'];
+                    // Use database column key name for consistency with Model::create
+                    $images['image_portrait'] = $imageResult['filename'];
                 } else {
                     $errors['image_portrait'] = $imageResult['error'];
                 }
@@ -61,7 +74,8 @@ class MonsterController
             if (!empty($_FILES['image_fullbody']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_fullbody'], 'monsters');
                 if ($imageResult['success']) {
-                    $images['fullbody'] = $imageResult['filename'];
+                    // Use database column key name for consistency with Model::create
+                    $images['image_fullbody'] = $imageResult['filename'];
                 } else {
                     $errors['image_fullbody'] = $imageResult['error'];
                 }
@@ -83,6 +97,13 @@ class MonsterController
             if ($monsterId) {
                 header('Location: index.php?url=monster&id=' . $monsterId);
                 exit;
+            } else {
+                // If creation failed, show a general error message
+                $errors = ['general' => 'Failed to create monster. Please check your data and try again.'];
+                extract(['errors' => $errors, 'old' => $data]);
+                $viewFile = ($type === 'boss') ? 'create.php' : 'create_small.php';
+                require_once __DIR__ . '/../views/monster/' . $viewFile;
+                return;
             }
         }
 
@@ -98,6 +119,10 @@ class MonsterController
     }
 
     // Affiche les détails d'un monstre spécifique
+    /**
+     * Show a single monster (small statblock view).
+     * Handles authorization and prepares derived view data (abilities grid, etc.).
+     */
     public function show($id)
     {
         $monster = $this->monsterModel->getById($id);
@@ -114,7 +139,84 @@ class MonsterController
             return;
         }
 
-        require_once __DIR__ . '/../views/monster/show.php';
+        // Prepare view variables for statblock display
+        $abilityLabels = [
+            'strength' => 'STR',
+            'dexterity' => 'DEX',
+            'constitution' => 'CON',
+            'intelligence' => 'INT',
+            'wisdom' => 'WIS',
+            'charisma' => 'CHA'
+        ];
+
+        // Build saving throws map
+        $savesMap = [];
+        if (!empty($monster['saving_throws']) && is_string($monster['saving_throws'])) {
+            $throwPairs = explode(',', $monster['saving_throws']);
+            foreach ($throwPairs as $pair) {
+                $parts = explode(':', trim($pair));
+                if (count($parts) === 2) {
+                    $ability = strtolower(trim($parts[0]));
+                    $bonus = trim($parts[1]);
+                    $savesMap[$ability] = $bonus;
+                }
+            }
+        }
+
+        // Build skills array
+        $skills = [];
+        if (!empty($monster['skills']) && is_string($monster['skills'])) {
+            $skillPairs = explode(',', $monster['skills']);
+            foreach ($skillPairs as $pair) {
+                $pair = trim($pair);
+                if (!empty($pair)) {
+                    $skills[] = $pair;
+                }
+            }
+        }
+
+        // Build senses array
+        $senses = [];
+        if (!empty($monster['senses']) && is_string($monster['senses'])) {
+            $senseParts = explode(',', $monster['senses']);
+            foreach ($senseParts as $sense) {
+                $sense = trim($sense);
+                if (!empty($sense)) {
+                    $senses[] = $sense;
+                }
+            }
+        }
+
+        // Build abilities grid with modifiers
+        $abilitiesGrid = [];
+        foreach ($abilityLabels as $key => $label) {
+            $score = isset($monster[$key]) ? (int)$monster[$key] : 10;
+            $mod = $this->calculateModifier($score);
+            $abilityShort = strtolower($label);
+            $saveBonus = $savesMap[$abilityShort] ?? '';
+            $abilitiesGrid[] = [
+                'label' => $label,
+                'mod_display' => $this->formatModifier($mod),
+                'save_bonus' => $saveBonus,
+            ];
+        }
+
+        // Ensure JSON arrays are properly populated
+        $traits = $monster['traits'] ?? [];
+        $actions = $monster['actions'] ?? [];
+        $bonusActions = $monster['bonus_actions'] ?? [];
+        $reactions = $monster['reactions'] ?? [];
+        $legendaryActions = $monster['legendary_actions'] ?? [];
+
+        // Route to correct view based on card size
+        // card_size: 1 = Boss (A6 horizontal), 2 = Small (playing card)
+        if (isset($monster['card_size']) && $monster['card_size'] == 1) {
+            // Boss monster: A6 horizontal two-column layout
+            require_once __DIR__ . '/../views/monster/boss-card.php';
+        } else {
+            // Small monster: Playing card vertical layout
+            require_once __DIR__ . '/../views/monster/small-statblock.php';
+        }
     }
 
     // Route dispatcher for monster actions
@@ -197,11 +299,12 @@ class MonsterController
             $errors = $this->monsterModel->validate($data);
             $images = [];
 
+            // Keep current filenames so we can clean up replaced files after a successful save
             // Traitement des images
             if (!empty($_FILES['image_portrait']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_portrait'], 'monsters');
                 if ($imageResult['success']) {
-                    $images['portrait'] = $imageResult['filename'];
+                    $images['image_portrait'] = $imageResult['filename'];
                 } else {
                     $errors['image_portrait'] = $imageResult['error'];
                 }
@@ -210,7 +313,7 @@ class MonsterController
             if (!empty($_FILES['image_fullbody']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_fullbody'], 'monsters');
                 if ($imageResult['success']) {
-                    $images['fullbody'] = $imageResult['filename'];
+                    $images['image_fullbody'] = $imageResult['filename'];
                 } else {
                     $errors['image_fullbody'] = $imageResult['error'];
                 }
@@ -225,7 +328,19 @@ class MonsterController
 
             // Mise à jour
             $data = array_merge($data, $images);
-            $this->monsterModel->update($id, $data, $userId);
+            $updated = $this->monsterModel->update($id, $data, $userId);
+
+            // If update succeeded and a new image was uploaded, delete old files to avoid orphaned uploads
+            if ($updated) {
+                $uploadPath = __DIR__ . '/../../public/uploads/monsters/';
+                if (!empty($images['image_portrait']) && !empty($oldPortrait) && $oldPortrait !== $images['image_portrait']) {
+                    @unlink($uploadPath . $oldPortrait);
+                }
+                if (!empty($images['image_fullbody']) && !empty($oldFullbody) && $oldFullbody !== $images['image_fullbody']) {
+                    @unlink($uploadPath . $oldFullbody);
+                }
+            }
+
             header('Location: index.php?url=monster&id=' . $id);
             exit;
         }
@@ -240,6 +355,50 @@ class MonsterController
 
         $monster = $this->monsterModel->getById($id);
         if (!$monster) {
+
+                // Prepare view data to keep logic out of the template
+                $traits = !empty($monster['traits']) ? (is_array($monster['traits']) ? $monster['traits'] : json_decode($monster['traits'], true)) : [];
+                $actions = !empty($monster['actions']) ? (is_array($monster['actions']) ? $monster['actions'] : json_decode($monster['actions'], true)) : [];
+                $bonusActions = !empty($monster['bonus_actions']) ? (is_array($monster['bonus_actions']) ? $monster['bonus_actions'] : json_decode($monster['bonus_actions'], true)) : [];
+                $reactions = !empty($monster['reactions']) ? (is_array($monster['reactions']) ? $monster['reactions'] : json_decode($monster['reactions'], true)) : [];
+
+                $savingThrows = !empty($monster['saving_throws']) ? explode(', ', $monster['saving_throws']) : [];
+                $skills = !empty($monster['skills']) ? explode(', ', $monster['skills']) : [];
+                $senses = !empty($monster['senses']) ? explode(', ', $monster['senses']) : [];
+
+                // Map of save bonuses keyed by ability short name
+                $savesMap = [];
+                if (!empty($monster['saving_throws'])) {
+                    $saveParts = explode(', ', $monster['saving_throws']);
+                    foreach ($saveParts as $part) {
+                        $parts = explode(' ', trim($part)); // Format: "STR +5"
+                        if (count($parts) === 2) {
+                            $savesMap[strtolower($parts[0])] = $parts[1];
+                        }
+                    }
+                }
+
+                $abilityLabels = [
+                    'strength' => 'STR',
+                    'dexterity' => 'DEX',
+                    'constitution' => 'CON',
+                    'intelligence' => 'INT',
+                    'wisdom' => 'WIS',
+                    'charisma' => 'CHA'
+                ];
+
+                $abilitiesGrid = [];
+                foreach ($abilityLabels as $key => $label) {
+                    $score = isset($monster[$key]) ? (int)$monster[$key] : 10;
+                    $mod = $this->calculateModifier($score);
+                    $abilityShort = strtolower($label);
+                    $saveBonus = $savesMap[$abilityShort] ?? '';
+                    $abilitiesGrid[] = [
+                        'label' => $label,
+                        'mod_display' => $this->formatModifier($mod),
+                        'save_bonus' => $saveBonus,
+                    ];
+                }
             require_once __DIR__ . '/../views/pages/error-404.php';
             return;
         }
@@ -281,10 +440,9 @@ class MonsterController
             'type' => trim($_POST['type'] ?? ''),
             'alignment' => trim($_POST['alignment'] ?? ''),
             'ac' => (int) ($_POST['ac'] ?? 10),
+            'ac_notes' => trim($_POST['ac_notes'] ?? ''),
             'hp' => (int) ($_POST['hp'] ?? 1),
             'hit_dice' => trim($_POST['hit_dice'] ?? ''),
-            'ac_notes' => trim($_POST['ac_notes'] ?? ''),
-            'equipment_variants' => trim($_POST['equipment_variants'] ?? ''),
             'speed' => trim($_POST['speed'] ?? ''),
             'proficiency_bonus' => $this->parseProficiencyBonus($_POST['proficiency_bonus'] ?? '0'),
             'strength' => (int) ($_POST['strength'] ?? 10),
@@ -307,7 +465,6 @@ class MonsterController
             'bonus_actions' => $this->buildBonusActions(),
             'reactions' => $this->buildReactions(),
             'legendary_actions' => $this->buildLegendaryActions(),
-            'legendary_action_uses' => trim($_POST['legendary_action_uses'] ?? ''),
             'is_legendary' => (int) ($_POST['is_legendary'] ?? 0),
             'legendary_resistance' => trim($_POST['legendary_resistance'] ?? ''),
             'legendary_resistance_lair' => trim($_POST['legendary_resistance_lair'] ?? ''),
@@ -583,7 +740,7 @@ class MonsterController
         return $actions;
     }
 
-    // Traite l'upload d'une image unique
+    // Traite l'upload d'une image unique: validate, name safely, store on disk, report filename
     private function uploadImage($file, $uploadDir = 'monsters'): array
     {
         $maxSize = 5 * 1024 * 1024; // 5MB
@@ -623,10 +780,11 @@ class MonsterController
 
         // Génération d'un nom de fichier unique et sécurisé
         $extension = $allowedMime[$mime];
+        // Hybrid name: random prefix + truncated, sanitized original name
         $originalName = pathinfo($file['name'], PATHINFO_FILENAME);
         $sanitizedName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);
         $truncatedName = substr($sanitizedName, 0, 20);
-        $uniqueId = bin2hex(random_bytes(8));
+        $uniqueId = bin2hex(random_bytes(12));
         $uniqueName = $uniqueId . '_' . $truncatedName . '.' . $extension;
 
         // Création du dossier s'il n'existe pas
@@ -667,5 +825,30 @@ class MonsterController
     public function createSmall()
     {
         $this->createForm('small');
+    }
+
+    /**
+     * Calculate D&D ability modifier from ability score.
+     * Formula: (score - 10) / 2, rounded down
+     * Example: 10 → 0, 12 → 1, 8 → -1, 14 → 2
+     */
+    private function calculateModifier($score): int
+    {
+        return (int)floor(($score - 10) / 2);
+    }
+
+    /**
+     * Format ability modifier as a signed string.
+     * Example: 1 → "+1", -1 → "-1", 0 → "+0"
+     */
+    private function formatModifier($modifier): string
+    {
+        if ($modifier > 0) {
+            return '+' . $modifier;
+        } elseif ($modifier < 0) {
+            return (string)$modifier;
+        } else {
+            return '+0';
+        }
     }
 }

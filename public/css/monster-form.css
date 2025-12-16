@@ -1,0 +1,114 @@
+/*
+ * Monster Maker - Form styling for dynamic sections
+ * Color palette:
+ * - Actions: Light Blue (#4A90E2)
+ * - Bonus Actions: Dark Blue (#1E3A8A)
+ * - Reactions: Royal Purple (#6B46C1)
+ * - Traits: Bloody Red (#DC143C)
+ * - Legendary Actions: Gold (#FFD700)
+ * - Lair Actions: Forest Green (#228B22)
+ */
+
+/* ========== Section header color codes ========== */
+.color-code-action {
+    background-color: #4A90E2;
+    color: #fff;
+}
+
+.color-code-bonus {
+    background-color: #1E3A8A;
+    color: #fff;
+}
+
+.color-code-reaction {
+    background-color: #6B46C1;
+    color: #fff;
+}
+
+.color-code-trait {
+    background-color: #DC143C;
+    color: #fff;
+}
+
+.color-code-legendary {
+    background-color: #FFD700;
+    color: #1f2933;
+}
+
+.color-code-lair {
+    background-color: #228B22;
+    color: #fff;
+}
+
+/* ========== Button styles for colored sections ========== */
+.section-header-button {
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.section-header-button .btn-outline-secondary,
+.section-header-button .btn-outline-danger {
+    color: inherit;
+    border-color: inherit;
+}
+
+.action-item,
+.bonus-action-item,
+.reaction-item,
+.trait-item,
+.legendary-action-item,
+.lair-action-item {
+    border: 1px solid #e5e7eb;
+}
+
+/* ========== Dynamic item header bars ========== */
+.action-item .d-flex.justify-content-between,
+.bonus-action-item .d-flex.justify-content-between,
+.reaction-item .d-flex.justify-content-between,
+.trait-item .d-flex.justify-content-between,
+.legendary-action-item .d-flex.justify-content-between,
+.lair-action-item .d-flex.justify-content-between {
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.action-item .d-flex.justify-content-between { background: #4A90E2; color: #fff; }
+.bonus-action-item .d-flex.justify-content-between { background: #1E3A8A; color: #fff; }
+.reaction-item .d-flex.justify-content-between { background: #6B46C1; color: #fff; }
+.trait-item .d-flex.justify-content-between { background: #DC143C; color: #fff; }
+.legendary-action-item .d-flex.justify-content-between { background: #FFD700; color: #1f2933; }
+.lair-action-item .d-flex.justify-content-between { background: #228B22; color: #fff; }
+
+/* ========== Color legend helpers ========== */
+.color-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+}
+
+.legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 999px;
+    background: #fafafa;
+}
+
+.legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.15);
+}
+
+.swatch-action { background: #4A90E2; }
+.swatch-bonus { background: #1E3A8A; }
+.swatch-reaction { background: #6B46C1; }
+.swatch-trait { background: #DC143C; }
+.swatch-legendary { background: #FFD700; }
+.swatch-lair { background: #228B22; }
+

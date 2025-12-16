@@ -1,0 +1,341 @@
+/* ===== BOSS MONSTER CARD STYLES (Horizontal A6 Format - Two Column Layout) ===== */
+
+/* Container for front + back cards */
+.boss-card-display-wrapper {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 20px auto;
+    padding: 0 20px;
+    max-width: 100%;
+}
+
+/* FRONT: Boss monster statblock (A6 landscape: 5.8in × 4.1in) */
+.boss-card-front {
+    background: #fff;
+    border: 3px solid #c8c8c8;
+    border-radius: 4px;
+    padding: 8px;
+    width: 5.8in;    /* A6 landscape width */
+    height: 4.1in;   /* A6 landscape height */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    overflow: hidden;
+    font-family: "Nunito", sans-serif;
+    margin: 4px;
+}
+
+.boss-card-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 0.65rem;
+}
+
+/* Header: Monster name, type, CR */
+.boss-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #333;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+}
+
+.boss-title-section {
+    flex: 1;
+}
+
+.boss-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    font-family: "New Rocker", system-ui;
+    line-height: 1.1;
+}
+
+.boss-type {
+    font-size: 0.65rem;
+    font-style: italic;
+    color: #666;
+    margin: 2px 0 0 0;
+}
+
+.boss-cr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid #8B0000;
+    border-radius: 4px;
+    padding: 3px 10px;
+    background: #fff8f8;
+}
+
+.cr-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #8B0000;
+    text-transform: uppercase;
+}
+
+.cr-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #8B0000;
+    line-height: 1;
+}
+
+/* Two column layout */
+.boss-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.boss-column-left,
+.boss-column-right {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Scrollbar styling */
+.boss-column-left::-webkit-scrollbar,
+.boss-column-right::-webkit-scrollbar {
+    width: 4px;
+}
+
+.boss-column-left::-webkit-scrollbar-thumb,
+.boss-column-right::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+}
+
+/* Quick stats bar */
+.boss-stats-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.6rem;
+}
+
+.boss-stat-item {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.stat-label {
+    font-weight: 700;
+    color: #333;
+    min-width: 30px;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: #333;
+}
+
+.stat-note {
+    font-size: 0.55rem;
+    color: #666;
+}
+
+/* Divider */
+.boss-divider {
+    height: 1px;
+    background: #ddd;
+    margin: 3px 0;
+}
+
+/* Abilities grid */
+.boss-abilities {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.boss-ability {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ability-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.ability-value {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.save-bonus {
+    font-size: 0.55rem;
+    color: #666;
+}
+
+/* Details section */
+.boss-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.55rem;
+    line-height: 1.2;
+}
+
+.detail-line {
+    color: #333;
+}
+
+.detail-line strong {
+    font-weight: 700;
+    color: #000;
+}
+
+/* Sections (Traits, Actions, etc.) */
+.boss-section {
+    margin-bottom: 6px;
+}
+
+.section-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #8B0000;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 0 0 3px 0;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #8B0000;
+}
+
+.entry-item {
+    font-size: 0.55rem;
+    line-height: 1.25;
+    margin-bottom: 3px;
+    color: #333;
+}
+
+.entry-name {
+    font-weight: 700;
+    font-style: italic;
+    color: #000;
+}
+
+.entry-text {
+    color: #333;
+}
+
+.legendary-intro {
+    font-size: 0.55rem;
+    font-style: italic;
+    color: #555;
+    margin-bottom: 4px;
+    line-height: 1.25;
+}
+
+/* BACK: Full body image (same A6 landscape dimensions) */
+.boss-card-back {
+    background: #fff;
+    border: 3px solid #c8c8c8;
+    border-radius: 4px;
+    width: 5.8in;
+    height: 4.1in;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    padding: 6px;
+    margin: 4px;
+}
+
+.boss-back-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+}
+
+.boss-back-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4a0000 0%, #8B0000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 4rem;
+}
+
+/* Print styles */
+@media print {
+    .action-buttons-bar {
+        display: none !important;
+    }
+
+    .boss-card-display-wrapper {
+        gap: 0.25in;
+        page-break-inside: avoid;
+    }
+
+    .boss-card-front,
+    .boss-card-back {
+        border: 1px solid #999;
+        box-shadow: none;
+        width: 5.8in;
+        height: 4.1in;
+        margin: 0;
+        padding: 8px;
+    }
+
+    @page {
+        size: 12in 4.5in landscape;
+        margin: 0.25in;
+    }
+
+    .boss-column-left,
+    .boss-column-right {
+        overflow: visible;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+    .boss-card-display-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .boss-card-front,
+    .boss-card-back {
+        width: 90vw;
+        max-width: 700px;
+        height: auto;
+        aspect-ratio: 58 / 41;
+    }
+
+    .boss-card-inner {
+        height: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .boss-columns {
+        grid-template-columns: 1fr;
+    }
+
+    .boss-card-front {
+        height: auto;
+        min-height: 500px;
+    }
+}

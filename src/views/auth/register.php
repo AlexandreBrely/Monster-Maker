@@ -80,7 +80,13 @@ $old = $old ?? [];        // Old form values (in case of error)
                 </div>
                 <div class="mb-3">
                     <label for="profile_picture" class="form-label">Profile Picture <span class="text-muted">(optional)</span></label>
-                    <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
+                    <?php if (isset($errors['avatar'])): ?>
+                        <span class="ms-2 text-danger fst-italic fw-light raleway-light-italic">
+                            <?= $errors["avatar"] ?? '' ?>
+                        </span>
+                    <?php endif; ?>
+                    <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/jpeg,image/png,image/gif,image/webp">
+                    <small class="text-muted">Accepted: JPG, PNG, GIF, WEBP (max 5MB)</small>
                 </div>
                 <button type="submit" class="btn btn-warning">Register</button>
                 <a class="d-block mt-2" href="index.php?url=login">Already registered? Log in!</a>

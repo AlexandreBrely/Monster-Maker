@@ -44,23 +44,13 @@
                             </p>
                         </div>
 
-                        <!-- Action buttons (if owner) -->
-                        <?php if (isset($_SESSION['user']) && $_SESSION['user']['u_id'] == $monster['u_id']): ?>
-                            <div class="btn-group" role="group">
-                                <a href="index.php?url=monster&id=<?php echo $monster['monster_id']; ?>&action=edit" 
-                                   class="btn btn-sm btn-warning">Edit</a>
-                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal">Delete</button>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <!-- Download Card Button -->
-                        <div class="ms-2">
-                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" 
-                                    data-bs-target="#cardPreviewModal">
-                                <i class="fa-solid fa-download me-1"></i>Download Card
-                            </button>
-                        </div>
+                        <!-- Action buttons: Print, Edit (if owner), Delete (if owner) -->
+                        <?php
+                        $editUrl = "index.php?url=monster&id={$monster['monster_id']}&action=edit";
+                        $deleteAction = "index.php?url=monster&id={$monster['monster_id']}&action=delete";
+                        $deleteModalId = 'deleteModal';
+                        require __DIR__ . '/../templates/action-buttons.php';
+                        ?>
                     </div>
                 </div>
             </div>
@@ -231,29 +221,7 @@
         </div>
     </div>
 
-    <!-- Delete confirmation modal -->
-    <?php if (isset($_SESSION['user']) && $_SESSION['user']['u_id'] == $monster['u_id']): ?>
-        <div class="modal fade" id="deleteModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Delete Monster</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to delete <strong><?php echo htmlspecialchars($monster['name']); ?></strong>?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <form method="POST" action="index.php?url=monster&id=<?php echo $monster['monster_id']; ?>&action=delete" 
-                              style="display: inline;">
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
+
 
     <!-- Card Preview Modal -->
     <div class="modal fade" id="cardPreviewModal" tabindex="-1">

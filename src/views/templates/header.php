@@ -11,6 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=New+Rocker&family=Nunito:wght@200..1000&family=Raleway:ital,wght@1,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/monster-form.css"> <!-- Color-coded borders for monster form sections -->
+    <?php if (!empty($extraStyles) && is_array($extraStyles)): ?>
+        <?php foreach ($extraStyles as $stylePath): ?>
+            <link rel="stylesheet" href="<?php echo htmlspecialchars($stylePath); ?>">
+        <?php endforeach; ?>
+    <?php endif; ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 </head>
 

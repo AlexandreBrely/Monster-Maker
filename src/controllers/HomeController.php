@@ -2,12 +2,22 @@
 
 namespace App\Controllers;
 
+/**
+ * HomeController
+ * Displays the public landing/home page.
+ * 
+ * Responsibilities:
+ * - Render the home page (no business logic needed)
+ * - Display public information about the app
+ */
 class HomeController
 {
-    // Afficher la page d'accueil
+    /**
+     * Display the home page.
+     * No authentication required; public endpoint.
+     */
     public function index()
     {
-        // Charger la vue de la page d'accueil
         require_once ROOT . '/src/views/home/index.php';
     }
 }
