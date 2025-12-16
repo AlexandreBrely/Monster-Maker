@@ -99,10 +99,16 @@
                     <h5 class="card-title mb-3">Ability Scores</h5>
                     <div class="row text-center">
                         <?php 
+                        // D&D 5e's six core abilities - map database column names to abbreviations
                         $abilities = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
                         $ability_names = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+                        
+                        // Loop through each ability to display score and modifier
                         foreach ($abilities as $i => $ability): 
-                            $score = (int)$monster[$ability];
+                            $score = (int)$monster[$ability]; // Ability score (1-30 range)
+                            
+                            // D&D 5e modifier formula: (score - 10) / 2, rounded down
+                            // Example: STR 16 → (16-10)/2 = 3 → +3 modifier
                             $modifier = floor(($score - 10) / 2);
                         ?>
                             <div class="col-4 col-md-2 mb-2">
@@ -158,6 +164,7 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">Traits</h5>
+                        <!-- nl2br() converts newlines (\n) to <br> tags for display -->
                         <p><?php echo nl2br(htmlspecialchars($monster['traits'])); ?></p>
                     </div>
                 </div>
@@ -168,7 +175,11 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">Actions</h5>
-                        <?php foreach ($monster['actions'] as $action): ?>
+                        <?php 
+                        // $monster['actions'] is an array deserialized from JSON in controller
+                        // Each $action is an associative array: ['name' => '...', 'description' => '...']
+                        foreach ($monster['actions'] as $action): 
+                        ?>
                             <div class="mb-3">
                                 <strong><?php echo htmlspecialchars($action['name']); ?></strong>
                                 <?php if (!empty($action['description'])): ?>
@@ -185,7 +196,11 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <h5 class="card-title">Reactions</h5>
-                        <?php foreach ($monster['reactions'] as $reaction): ?>
+                        <?php 
+                        // Reactions are triggered abilities (e.g., Shield spell as reaction)
+                        // Each reaction has: name, trigger condition, description
+                        foreach ($monster['reactions'] as $reaction): 
+                        ?>
                             <div class="mb-3">
                                 <strong><?php echo htmlspecialchars($reaction['name']); ?></strong>
                                 <?php if (!empty($reaction['trigger'])): ?>
@@ -206,11 +221,17 @@
                     <div class="card-body">
                         <h5 class="card-title">Legendary Actions</h5>
                         <?php if (!empty($monster['legendary_resistance'])): ?>
+                            <!-- Legendary Resistance allows auto-succeeding on failed saves -->
                             <p class="text-muted"><strong>Legendary Resistance:</strong> <?php echo htmlspecialchars($monster['legendary_resistance']); ?></p>
                         <?php endif; ?>
-                        <?php foreach ($monster['legendary_actions'] as $leg_action): ?>
+                        <?php 
+                        // Legendary actions can be used at end of another creature's turn
+                        // Each has a cost (typically 1-3 actions, boss gets 3 per round)
+                        foreach ($monster['legendary_actions'] as $leg_action): 
+                        ?>
                             <div class="mb-2">
                                 <strong><?php echo htmlspecialchars($leg_action['name']); ?></strong> 
+                                <!-- Badge shows action cost: "1 cost" or "2 costs" -->
                                 <span class="badge bg-secondary"><?php echo (int)$leg_action['cost']; ?> cost<?php echo (int)$leg_action['cost'] > 1 ? 's' : ''; ?></span>
                                 <p class="mb-0"><?php echo nl2br(htmlspecialchars($leg_action['description'])); ?></p>
                             </div>

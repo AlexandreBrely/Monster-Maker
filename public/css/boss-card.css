@@ -1,11 +1,27 @@
 /* ===== BOSS MONSTER CARD STYLES (Horizontal A6 Format - Two Column Layout) ===== */
 
+/*
+ * For beginners:
+ * This CSS creates a horizontal A6 card (5.8in × 4.1in) for boss monsters.
+ * 
+ * Layout Strategy:
+ * - Use CSS Grid to create two equal columns (grid-template-columns: 1fr 1fr)
+ * - Each column scrolls independently if content is too long
+ * - Print-ready: Cards fit on a landscape page when printed
+ * 
+ * Key CSS Concepts Used:
+ * - Flexbox: For centering and alignment
+ * - Grid: For the two-column layout
+ * - box-sizing: border-box: Includes padding/border in width calculation
+ * - overflow: auto: Adds scrollbars when content overflows
+ */
+
 /* Container for front + back cards */
 .boss-card-display-wrapper {
-    display: flex;
-    gap: 30px;
-    align-items: flex-start;
-    justify-content: center;
+    display: flex;              /* Side-by-side layout */
+    gap: 30px;                  /* Space between front and back cards */
+    align-items: flex-start;    /* Align cards to top */
+    justify-content: center;    /* Center the cards horizontally */
     margin: 20px auto;
     padding: 0 20px;
     max-width: 100%;
@@ -88,13 +104,21 @@
 }
 
 /* Two column layout */
+/*
+ * For beginners:
+ * CSS Grid creates the two-column layout.
+ * - grid-template-columns: 1fr 1fr = two equal columns
+ * - 1fr means "1 fraction" - each column gets 50% of the space
+ * - gap: 10px = space between columns
+ * - overflow: hidden = prevents content from spilling outside the card
+ */
 .boss-columns {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    grid-template-columns: 1fr 1fr;  /* Two equal columns */
+    gap: 10px;                       /* Space between columns */
+    flex: 1;                         /* Grow to fill available space */
+    min-height: 0;                   /* Allow columns to shrink */
+    overflow: hidden;                /* Hide overflow */
 }
 
 .boss-column-left,

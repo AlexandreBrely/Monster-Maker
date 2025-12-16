@@ -7,13 +7,24 @@ use App\Models\LairCard;
 /**
  * Lair Card Controller
  * Handles CRUD operations for lair action cards (horizontal landscape format)
+ * 
+ * For beginners:
+ * A controller is the "traffic director" of your app.
+ * When a user visits a URL like index.php?url=lair-card-create,
+ * the router sends the request to this controller.
+ * The controller then:
+ * 1. Gets data from the user (forms)
+ * 2. Validates it
+ * 3. Uses the model to save/retrieve from database
+ * 4. Shows the appropriate view (HTML page)
  */
 class LairCardController
 {
-    private $lairCardModel;
+    private $lairCardModel; // Model for database operations
 
     public function __construct()
     {
+        // Create model instance when controller is created
         $this->lairCardModel = new LairCard();
     }
 
@@ -50,13 +61,25 @@ class LairCardController
 
     /**
      * Handle lair card creation
+     * 
+     * For beginners:
+     * This processes the form when user submits a new lair card.
+     * Steps:
+     * 1. Extract form data (monster name, lair actions, etc.)
+     * 2. Validate it (check required fields)
+     * 3. Handle image upload if provided
+     * 4. If valid: save to database and redirect to list
+     * 5. If errors: show form again with error messages
      */
     public function store()
     {
-        $this->ensureAuthenticated();
+        $this->ensureAuthenticated(); // Make sure user is logged in
         $userId = $_SESSION['user']['u_id'];
 
+        // Extract all form data into an array
         $data = $this->getFormData();
+        
+        // Validate: check required fields, return error messages if invalid
         $errors = $this->lairCardModel->validate($data);
 
         // Handle image upload
@@ -174,15 +197,26 @@ class LairCardController
 
     /**
      * Extract form data
+     * 
+     * For beginners:
+     * This reads all the form fields from $_POST and organizes them.
+     * Special handling for lair actions:
+     * - The form has multiple action fields (name[], description[])
+     * - We loop through them and build an array of action objects
      */
     private function getFormData()
     {
-        // Parse lair actions
+        // Parse lair actions from multiple form inputs
         $lairActions = [];
+        
+        // Get all action names (array of inputs with name="lair_action_name[]")
         $actionNames = $_POST['lair_action_name'] ?? [];
+        
+        // Loop through each action name by index
         foreach ($actionNames as $index => $name) {
-            if (empty(trim($name))) continue;
+            if (empty(trim($name))) continue; // Skip empty names
 
+            // Build action object with name and description
             $lairActions[] = [
                 'name' => trim($name),
                 'description' => trim($_POST['lair_action_description'][$index] ?? '')

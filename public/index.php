@@ -37,6 +37,12 @@ $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
 
 // Simple Router: map route keys to controllers
 // Format: 'route' => ['controller' => 'ControllerName', 'action' => 'methodName']
+//
+// For beginners:
+// This array maps URLs to controller methods.
+// Example: index.php?url=my-lair-cards
+//   → Routes to LairCardController->myLairCards()
+//   → Controller prepares data and shows the view
 $routes = [
     'home' => ['controller' => 'HomeController', 'action' => 'index'],
     'login' => ['controller' => 'AuthController', 'action' => 'login'],
@@ -45,6 +51,8 @@ $routes = [
     'edit-profile' => ['controller' => 'AuthController', 'action' => 'editProfile'],
     'delete-avatar' => ['controller' => 'AuthController', 'action' => 'deleteAvatar'],
     'settings' => ['controller' => 'AuthController', 'action' => 'settings'],
+    
+    // Monster routes
     'monsters' => ['controller' => 'MonsterController', 'action' => 'index'],
     'monster' => ['controller' => 'MonsterController', 'action' => 'handleMonsterRoute'],
     'create' => ['controller' => 'MonsterController', 'action' => 'create'],
@@ -52,10 +60,14 @@ $routes = [
     'create_boss' => ['controller' => 'MonsterController', 'action' => 'createBoss'],
     'create_small' => ['controller' => 'MonsterController', 'action' => 'createSmall'],
     'my-monsters' => ['controller' => 'MonsterController', 'action' => 'myMonsters'],
+    
+    // Lair card routes (horizontal landscape cards for lair actions)
     'my-lair-cards' => ['controller' => 'LairCardController', 'action' => 'myLairCards'],
     'lair-card' => ['controller' => 'LairCardController', 'action' => 'show'],
     'lair-card-create' => ['controller' => 'LairCardController', 'action' => 'create'],
     'lair-card-store' => ['controller' => 'LairCardController', 'action' => 'store'],
+    
+    // Static pages
     'cgu' => ['controller' => 'PagesController', 'action' => 'cgu'],
     'terms' => ['controller' => 'PagesController', 'action' => 'terms'],
 ];

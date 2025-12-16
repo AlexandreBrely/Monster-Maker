@@ -2,6 +2,15 @@
 /**
  * Lair Card Display (Horizontal Landscape Format)
  * Shows lair actions and regional effects in a landscape card
+ * 
+ * For beginners:
+ * This view displays a lair card in A6 landscape format.
+ * It shows two cards side-by-side:
+ * - Front: Lair name, initiative, actions, regional effects
+ * - Back: Landscape image of the lair
+ * 
+ * The view loops through $lairCard['lair_actions'] array
+ * to display each action with its name and description.
  */
 ?>
 <?php $extraStyles = ['/css/lair-card.css']; ?>

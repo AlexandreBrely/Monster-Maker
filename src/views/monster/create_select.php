@@ -18,7 +18,7 @@ require_once ROOT . '/src/views/templates/navbar.php';
         <div class="col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body text-center">
-                    <h4 class="card-title">🐺 Small Monster</h4>
+                    <h4 class="card-title">Small Monster</h4>
                     <p class="card-text">A compact statblock for minions, animals, or simple NPCs. Fast to create and easy to use at the table.</p>
                     
                     <!-- Example card placeholder -->
@@ -34,7 +34,7 @@ require_once ROOT . '/src/views/templates/navbar.php';
         <div class="col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body text-center">
-                    <h4 class="card-title">🐉 Boss Monster</h4>
+                    <h4 class="card-title">Boss Monster</h4>
                     <p class="card-text">A full-featured statblock for legendary monsters, villains, or epic encounters. Includes legendary actions, lair actions, and more.</p>
                     
                     <!-- Example card placeholder -->

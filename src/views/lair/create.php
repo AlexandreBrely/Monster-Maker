@@ -2,6 +2,13 @@
 /**
  * Lair Card Creation Form
  * Create a horizontal landscape card for lair actions
+ * 
+ * For beginners:
+ * This is the HTML form where users create lair cards.
+ * Key features:
+ * - Dynamic lair action fields (user can add/remove actions)
+ * - JavaScript adds new action fields when user clicks "Add Action"
+ * - Form data is sent to LairCardController->store() when submitted
  */
 ?>
 <?php require_once ROOT . '/src/views/templates/header.php'; ?>

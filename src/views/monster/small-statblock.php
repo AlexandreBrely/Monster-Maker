@@ -4,11 +4,24 @@
  * Small Monster Statblock View (Single-Column Playing Card)
  * Displays small-format monsters in D&D 5e statblock style.
  *
- * Expected variables:
- * - $monster : array with all monster data
+ * This view renders a vertical playing card (2.48in × 3.46in) for small monsters.
+ * The card shows all essential stats in a compact, print-ready format.
+ *
+ * Expected variables from controller (MonsterController->show):
+ * - $monster : array with all monster data (deserialized from database)
+ * - $abilitiesGrid : pre-calculated ability scores with modifiers
+ * - $skills : array of skill names parsed from comma-separated string
+ * - $senses : array of senses parsed from comma-separated string
+ * - $traits, $actions, $bonusActions, $reactions : deserialized JSON arrays
+ *
+ * Data flow:
+ * 1. Controller calls Monster model's getById() which deserializes JSON fields
+ * 2. Controller builds $abilitiesGrid, $skills, $senses arrays
+ * 3. This view displays the prepared data in a playing card layout
  */
 
-// Defaults in case controller did not precompute values
+// ?? operator: Use provided value if exists, otherwise default to empty array
+// This prevents errors if controller didn't prepare these variables
 $traits = $traits ?? [];
 $actions = $actions ?? [];
 $bonusActions = $bonusActions ?? [];
@@ -44,13 +57,15 @@ require __DIR__ . '/../templates/action-buttons.php';
                 </p>
             </div>
             <?php
-            // XP values by challenge rating
+            // XP values by challenge rating (D&D 5e standard progression)
+            // Maps CR string (including fractions like '1/2') to XP reward
+            // Used to display XP value next to CR in the header
             $xpByCR = [
-                '0' => 10,
-                '1/8' => 25,
+                '0' => 10,      // CR 0 creatures (trivial encounters)
+                '1/8' => 25,    // Fractional CRs for very weak creatures
                 '1/4' => 50,
                 '1/2' => 100,
-                '1' => 200,
+                '1' => 200,     // CR 1 and up follow exponential curve
                 '2' => 450,
                 '3' => 700,
                 '4' => 1100,
@@ -82,6 +97,8 @@ require __DIR__ . '/../templates/action-buttons.php';
                 '30' => 155000
             ];
             $cr = $monster['challenge_rating'];
+            // isset() checks if array key exists before accessing it
+            // number_format() adds thousand separators (e.g., 1000 → 1,000)
             $xp = isset($xpByCR[$cr]) ? number_format($xpByCR[$cr]) : '—';
             ?>
             <div class="header-cr">

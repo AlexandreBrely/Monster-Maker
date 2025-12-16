@@ -1,11 +1,24 @@
 /* ===== LAIR CARD STYLES (Horizontal Landscape Format) ===== */
 
+/*
+ * For beginners:
+ * Lair cards are horizontal (landscape) cards showing lair actions.
+ * 
+ * Dimensions: A6 landscape (5.8in × 4.1in)
+ * Layout: Single column with sections for lair actions and regional effects
+ * 
+ * CSS Concepts:
+ * - Flexbox (display: flex): Aligns cards side-by-side
+ * - border-radius: Rounded corners
+ * - object-fit: cover: Makes images fill the space without distortion
+ */
+
 /* Container for front + back cards displayed side by side */
 .lair-card-wrapper {
-    display: flex;
-    gap: 30px;
-    align-items: flex-start;
-    justify-content: center;
+    display: flex;              /* Side-by-side layout */
+    gap: 30px;                  /* Space between cards */
+    align-items: flex-start;    /* Align to top */
+    justify-content: center;    /* Center horizontally */
     margin: 20px auto;
     max-width: 100%;
 }

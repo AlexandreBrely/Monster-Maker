@@ -12,27 +12,51 @@ use PDO;
  * - Lair actions (special actions that occur on initiative count 20)
  * - Regional effects (environmental changes around the lair)
  * - Lair description and atmosphere
+ * 
+ * For beginners:
+ * This model handles all database operations for lair cards.
+ * Think of it as the "data manager" that knows how to save, retrieve,
+ * update, and delete lair cards from the database.
  */
 class LairCard
 {
-    private $db;
+    private $db; // Database connection (PDO object)
 
     public function __construct()
     {
+        // Create database connection when model is instantiated
+        // This happens automatically when you create a new LairCard()
         $database = new Database();
         $this->db = $database->getConnection();
     }
 
     /**
      * Get all lair cards for a specific user
+     * 
+     * For beginners:
+     * This fetches all lair cards that belong to one user.
+     * Steps:
+     * 1. Prepare SQL query with placeholder (:userId) for security
+     * 2. Execute query with actual user ID
+     * 3. Convert JSON fields (like lair_actions) from text to PHP arrays
+     * 4. Return array of lair cards
      */
     public function getByUser($userId)
     {
+        // SQL query: Get all cards for this user, newest first
         $sql = "SELECT * FROM lair_card WHERE u_id = :userId ORDER BY created_at DESC";
+        
+        // Prepare statement (prevents SQL injection)
         $stmt = $this->db->prepare($sql);
+        
+        // Execute with actual user ID replacing :userId placeholder
         $stmt->execute([':userId' => $userId]);
+        
+        // Fetch all results as array
         $cards = $stmt->fetchAll();
 
+        // Convert JSON fields to PHP arrays for each card
+        // The & means we modify the actual $card, not a copy
         foreach ($cards as &$card) {
             $this->deserializeJsonFields($card);
         }
@@ -59,9 +83,15 @@ class LairCard
 
     /**
      * Create a new lair card
+     * 
+     * For beginners:
+     * This saves a new lair card to the database.
+     * We convert PHP arrays (lair_actions) to JSON text before storing,
+     * because databases can't store arrays directly.
      */
     public function create($data, $userId)
     {
+        // SQL INSERT statement with placeholders (:u_id, :monster_name, etc.)
         $sql = "INSERT INTO lair_card (
                     u_id, monster_name, lair_name, lair_description,
                     lair_initiative, lair_actions, regional_effects, image_back
@@ -72,6 +102,8 @@ class LairCard
 
         $stmt = $this->db->prepare($sql);
 
+        // Convert lair_actions array to JSON string for storage
+        // Example: [{"name":"Quake","description":"..."}] becomes JSON text
         $lairActions = json_encode($data['lair_actions'] ?? []);
 
         $params = [
@@ -157,13 +189,28 @@ class LairCard
 
     /**
      * Deserialize JSON fields in a lair card record
+     * 
+     * For beginners:
+     * "Deserialize" means converting JSON text back to PHP arrays.
+     * The database stores lair_actions as JSON text like:
+     * '[{"name":"Quake","description":"Ground shakes"}]'
+     * 
+     * This method converts it back to a PHP array so we can loop through it:
+     * [['name' => 'Quake', 'description' => 'Ground shakes']]
+     * 
+     * The & before $card means we modify the original array, not a copy.
      */
     private function deserializeJsonFields(&$card)
     {
         if (!empty($card['lair_actions'])) {
+            // json_decode converts JSON text to PHP array
+            // true = return array (not object)
             $decoded = json_decode($card['lair_actions'], true);
+            
+            // Use decoded array, or empty array if decode failed
             $card['lair_actions'] = $decoded ?? [];
         } else {
+            // No lair actions? Set to empty array
             $card['lair_actions'] = [];
         }
     }

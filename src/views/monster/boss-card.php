@@ -2,6 +2,25 @@
 /**
  * Boss Monster Card (Horizontal A6 Format - Two Column Layout)
  * Displays boss monsters in landscape A6 format (5.8in x 4.1in)
+ * 
+ * For beginners:
+ * This view displays boss monsters (legendary creatures) in a two-column layout.
+ * 
+ * Card Structure:
+ * - Front Card (5.8in × 4.1in horizontal):
+ *   - Left Column: AC, HP, Speed, Abilities, Skills, Senses, Immunities
+ *   - Right Column: Traits, Actions, Bonus Actions, Reactions, Legendary Actions
+ * - Back Card: Full body image
+ * 
+ * Data Flow:
+ * 1. Controller (MonsterController->show) prepares data:
+ *    - $abilitiesGrid: Array of abilities with modifiers
+ *    - $skills, $senses: Parsed from comma-separated strings
+ *    - $traits, $actions, etc.: Deserialized from JSON
+ * 2. This view receives the prepared data and displays it
+ * 3. We loop through arrays (foreach) to display each trait/action
+ * 
+ * CSS: boss-card.css handles the horizontal layout and two-column grid
  */
 ?>
 <?php $extraStyles = ['/css/boss-card.css']; ?>

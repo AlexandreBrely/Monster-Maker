@@ -3,12 +3,22 @@
  * Mini Monster Card Template
  * Displays a compact statblock card for use in listings (index, my-monsters)
  * 
- * Expected variables:
+ * For beginners:
+ * This is a reusable template (partial) that displays one monster card.
+ * It's included in listing pages using: require 'monster-card-mini.php'
+ * 
+ * Expected variables (must be set before including this file):
  * - $monster: array with monster data (must be deserialized with JSON fields as arrays)
  * - $showOwnerBadge: bool (optional) - show public/private badge for owner
+ * 
+ * How it works:
+ * 1. Loop through abilities (STR, DEX, etc.) and calculate modifiers
+ * 2. Display front card with stats
+ * 3. Display back card with full-body image
+ * 4. Entire card is wrapped in a link to the full monster view
  */
 
-$showOwnerBadge = $showOwnerBadge ?? false;
+$showOwnerBadge = $showOwnerBadge ?? false; // Default to false if not set
 ?>
 <div class="monster-card-mini">
     <a href="index.php?url=monster&id=<?php echo $monster['monster_id']; ?>" class="text-decoration-none">

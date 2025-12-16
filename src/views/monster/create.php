@@ -91,11 +91,23 @@ require_once ROOT . '/src/views/templates/navbar.php';
 
         <!-- ABILITY SCORES -->
         <div class="row mb-3">
+            <!-- Each ability score has:
+                 - Input field for score (1-30)
+                 - Live-calculated modifier display (updated via JavaScript)
+                 - Checkbox for saving throw proficiency
+                 
+                 D&D 5e uses six core abilities: STR, DEX, CON, INT, WIS, CHA
+                 Modifier formula: (score - 10) / 2, rounded down
+                 Example: STR 16 → (16-10)/2 = 3 → +3 modifier
+            -->
             <div class="col-md-2">
                 <label for="strength" class="form-label">STR <span class="text-danger">*</span></label>
+                <!-- data-ability attribute used by JavaScript to identify which ability -->
                 <input type="number" class="form-control ability-score" id="strength" name="strength" min="1" max="30" required data-ability="str">
+                <!-- Modifier display updated by monster-form.js when user types -->
                 <small class="text-muted modifier-display d-block" id="str-modifier">Mod: +0</small>
                 <div class="form-check form-check-sm mt-2">
+                    <!-- Saving throw proficiency: checked = monster is proficient in STR saves -->
                     <input class="form-check-input save-proficiency" type="checkbox" id="save_str" name="save_proficiencies[]" value="str">
                     <label class="form-check-label" for="save_str">Save</label>
                 </div>
@@ -148,32 +160,45 @@ require_once ROOT . '/src/views/templates/navbar.php';
         </div>
 
         <!-- SKILLS, SENSES, LANGUAGES, CR -->
+        <!-- Skills: D&D proficiencies like Stealth, Perception, Arcana
+             Format: "Skill +modifier" separated by commas -->
         <div class="mb-3">
             <label for="skills" class="form-label">Skills</label>
             <textarea class="form-control" id="skills" name="skills" rows="2" placeholder="e.g. Stealth +9, Perception +6, Arcana +7"></textarea>
         </div>
         <div class="row mb-3">
             <div class="col-md-6">
+                <!-- Senses: Special vision types (Darkvision, Blindsight, Truesight, etc.) -->
                 <label for="senses" class="form-label">Senses</label>
                 <textarea class="form-control" id="senses" name="senses" rows="2" placeholder="e.g. Darkvision 120 ft, Blindsight 30 ft, Passive Perception 20"></textarea>
             </div>
             <div class="col-md-6">
+                <!-- Languages: Spoken/understood languages, including telepathy -->
                 <label for="languages" class="form-label">Languages</label>
                 <textarea class="form-control" id="languages" name="languages" rows="2" placeholder="e.g. Common, Draconic, telepathy 120 ft"></textarea>
             </div>
         </div>
         <div class="row mb-3">
             <div class="col-md-6">
+                <!-- Challenge Rating: Difficulty measure (0-30+) with XP reward
+                     CR determines XP, proficiency bonus, and encounter balancing -->
                 <label for="challenge_rating" class="form-label">Challenge Rating / XP</label>
                 <input type="text" class="form-control" id="challenge_rating" name="challenge_rating" placeholder="e.g. 13 (10,000 XP)">
             </div>
             <div class="col-md-6">
+                <!-- Legendary Resistance: Boss ability to auto-succeed on failed saves
+                     Typically 3/day for legendary creatures -->
                 <label for="legendary_resistance" class="form-label">Legendary Resistance <span class="text-muted">(optional)</span></label>
                 <input type="text" class="form-control" id="legendary_resistance" name="legendary_resistance" placeholder="e.g. 3/day; on fail, succeed instead">
             </div>
         </div>
 
         <!-- RESISTANCES & IMMUNITIES -->
+        <!-- Damage types: fire, cold, lightning, poison, acid, necrotic, radiant, psychic, force, thunder
+             Physical: bludgeoning, piercing, slashing (can specify "from nonmagical attacks")
+             Resistances: Take half damage
+             Immunities: Take no damage
+             Vulnerabilities: Take double damage -->
         <div class="row mb-3">
             <div class="col-md-6">
                 <label for="damage_resistances" class="form-label">Damage Resistances</label>
