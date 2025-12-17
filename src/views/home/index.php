@@ -37,7 +37,7 @@
                 <div class="card-body text-center">
                     <i class="bi bi-printer display-1 text-danger mb-3"></i>
                     <h3 class="card-title">Print as Cards</h3>
-                    <p class="card-text">Export your monsters as PDF in business card or A5 format. Perfect for your gaming table!</p>
+                    <p class="card-text">Export your monsters as PDF in business card or A6 format. Perfect for your gaming table!</p>
                     <a href="index.php?url=monsters" class="btn btn-danger">Get Started</a>
                 </div>
             </div>
@@ -56,7 +56,7 @@
                 <p class="lead text-muted">Compact and practical for quick encounters with bandits, beasts, and goblins.</p>
             </div>
             <div class="col-md-6">
-                <h6 class="mb-2"> A5 Sheets: </h6>
+                <h6 class="mb-2"> A6 Sheets: </h6>
                 <p class="lead text-muted">Larger format designed for epic foes such as dragons, liches, and other powerful adversaries.</p>
             </div>
         </div>

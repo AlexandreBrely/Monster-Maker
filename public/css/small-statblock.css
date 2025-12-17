@@ -1,24 +1,5 @@
 /* ===== SMALL MONSTER STATBLOCK STYLES ===== */
 
-/* ACTION BUTTONS BAR: Print, Edit, Delete buttons - all in one line */
-.action-buttons-bar {
-    display: flex;
-    gap: 8px;               /* Small gap between buttons */
-    justify-content: center;
-    margin: 0 auto 20px auto;
-    padding: 10px 0;
-    flex-wrap: wrap;
-}
-
-.action-buttons-bar .btn {
-    white-space: nowrap;    /* Keep button text on one line */
-}
-
-.action-buttons-bar .btn-sm {
-    padding: 4px 10px;      /* Small padding for compact buttons */
-    font-size: 0.925rem;    /* Small font size */
-}
-
 /* LAYOUT: Container that holds both the FRONT CARD (.statblock) and BACK CARD (.card-back) side-by-side */
 .card-display-wrapper {
     display: flex;
@@ -146,35 +127,38 @@
     color: #666;
 }
 
-/* ===== QUICK STATS BAR: AC, HP, Speed ===== */
-/* One-line display: [AC 15 (notes)] [HP 45 (7d10+14)] [Speed 40 ft.] */
+/* ===== QUICK STATS BAR: AC, HP, Speed, Initiative (2x2 Grid) ===== */
+/* Grid layout using Bootstrap: Row 1 (AC | Initiative), Row 2 (HP | Speed) */
 .statblock-stats {
-    display: flex;
-    gap: 6px;      /* Better spacing between stat items */
+    /* Container for grid rows - let Bootstrap grid do the layout */
+    display: block;
     margin-top: 0px;
     margin-bottom: 0px;
     font-size: 0.41rem;  /* Slightly larger for readability */
     font-weight: 500;
-    flex-wrap: wrap;
-    justify-content: space-between;  /* Spread stats across width */
 }
 
 .stat-line {
-    display: inline-flex;
+    display: flex;
     align-items: baseline;
     gap: 3px;  /* Better spacing within each stat group */
 }
 
-/* Extra outside margins for AC and HP groups */
-.statblock-stats .ac-block { margin-left: 6px; }
-.statblock-stats .hp-block { margin-right: 6px; }
+/* Optional: Add slight margins between grid items */
+.statblock-stats .ac-block { margin-left: 2px; }
+.statblock-stats .hp-block { margin-left: 2px; }
+.statblock-stats .initiative-block { margin-right: 2px; }
+.statblock-stats .speed-block { margin-right: 2px; }
 
-/* Center the Speed row across the full width to separate from abilities */
-.speed-block {
-    display: flex;        /* Override inline-flex */
-    width: 100%;
-    justify-content: center;
-    margin: 2px 0;        /* Subtle breathing room above/below */
+/* Bootstrap grid row and column styles override */
+.statblock-stats .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.statblock-stats .col-6 {
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 /* AC LABEL - "AC" text */
@@ -280,8 +264,9 @@
 
 /* SAVE BONUS - Displayed as " /+5" after ability modifier when monster has save proficiency */
 .save-bonus {
-    font-size: 0.43rem;     
-    color: #666;           /* Lighter color to differentiate from modifier */
+    font-size: 0.45rem;
+    font-weight: 700;
+    color: #666;           /* Grey color to differentiate from modifier */
     vertical-align: baseline;
 }
 

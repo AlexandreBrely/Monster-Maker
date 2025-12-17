@@ -26,27 +26,29 @@ $canEdit = isset($_SESSION['user']) && isset($monster['u_id']) && $_SESSION['use
 $deleteModalId = $deleteModalId ?? 'deleteModal';
 ?>
 
-<div class="action-buttons-bar">
-    <!-- Print button: Triggers browser print dialog -->
-    <!-- onclick attribute executes JavaScript when button clicked -->
-    <!-- window.print() is native browser API for printing -->
-    <button onclick="window.print()" class="btn btn-sm btn-primary">
-        <i class="fa-solid fa-print"></i> Print
-    </button>
-    
-    <!-- Edit/Delete buttons: Only visible to card owner -->
-    <?php if ($canEdit): ?>
-        <!-- Edit button: Link to edit form -->
-        <a href="<?php echo htmlspecialchars($editUrl); ?>" class="btn btn-sm btn-warning">
-            <i class="fa-solid fa-edit"></i> Edit
-        </a>
-        
-        <!-- Delete button: Opens confirmation modal (data-bs-toggle, data-bs-target are Bootstrap attributes) -->
-        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
-            data-bs-target="#<?php echo htmlspecialchars($deleteModalId); ?>">
-            <i class="fa-solid fa-trash"></i> Delete
+<!-- Action Buttons: Download, Edit, Delete (styled with Bootstrap only) -->
+<div class="container my-4">
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <!-- Download button: Saves card as high-quality image -->
+        <!-- JavaScript function will capture card and download as PNG/JPEG -->
+        <button onclick="downloadCard()" class="btn btn-sm btn-success">
+            <i class="fa-solid fa-download"></i> Download Card
         </button>
-    <?php endif; ?>
+        
+        <!-- Edit/Delete buttons: Only visible to card owner -->
+        <?php if ($canEdit): ?>
+            <!-- Edit button: Link to edit form -->
+            <a href="<?php echo htmlspecialchars($editUrl); ?>" class="btn btn-sm btn-warning">
+                <i class="fa-solid fa-edit"></i> Edit
+            </a>
+            
+            <!-- Delete button: Opens confirmation modal (data-bs-toggle, data-bs-target are Bootstrap attributes) -->
+            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                data-bs-target="#<?php echo htmlspecialchars($deleteModalId); ?>">
+                <i class="fa-solid fa-trash"></i> Delete
+            </button>
+        <?php endif; ?>
+    </div>
 </div>
 
 <!-- Delete confirmation modal: Only rendered if user is card owner -->

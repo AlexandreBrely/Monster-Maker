@@ -495,7 +495,16 @@ class MonsterController
         if (!empty($monster['saving_throws']) && is_string($monster['saving_throws'])) {
             $throwPairs = explode(',', $monster['saving_throws']);
             foreach ($throwPairs as $pair) {
-                $parts = explode(':', trim($pair));
+                $pair = trim($pair);
+                // Handle both "STR +5" and "STR:+5" formats
+                if (strpos($pair, ':') !== false) {
+                    // Colon format: "STR:+5"
+                    $parts = explode(':', $pair);
+                } else {
+                    // Space format: "STR +5"
+                    $parts = preg_split('/\s+/', $pair, 2);
+                }
+                
                 if (count($parts) === 2) {
                     $ability = strtolower(trim($parts[0]));
                     $bonus = trim($parts[1]);
@@ -570,6 +579,7 @@ class MonsterController
             'hp' => (int) ($_POST['hp'] ?? 1),
             'hit_dice' => trim($_POST['hit_dice'] ?? ''),
             'speed' => trim($_POST['speed'] ?? ''),
+            'initiative' => (int) ($_POST['initiative'] ?? 0),
             'proficiency_bonus' => $this->parseProficiencyBonus($_POST['proficiency_bonus'] ?? '0'),
             'strength' => (int) ($_POST['strength'] ?? 10),
             'dexterity' => (int) ($_POST['dexterity'] ?? 10),
@@ -736,8 +746,15 @@ class MonsterController
             $description = trim($descriptions[$index] ?? '');
             
             if (!empty($name) || !empty($description)) {
+                // Parse cost from name if it contains "(Costs X Actions)"
+                $cost = 1; // Default cost
+                if (preg_match('/\(Costs?\s+(\d+)\s+Actions?\)/i', $name, $matches)) {
+                    $cost = (int)$matches[1];
+                }
+                
                 $actions[] = [
                     'name' => $name,
+                    'cost' => $cost,
                     'description' => $description
                 ];
             }

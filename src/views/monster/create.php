@@ -77,15 +77,22 @@ require_once ROOT . '/src/views/templates/navbar.php';
 
         <!-- MOVEMENT & PROFICIENCY -->
         <div class="row mb-3">
-            <div class="col-md-8">
+            <div class="col-md-6">
                 <label for="speed" class="form-label">Speed <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="speed" name="speed" required placeholder="e.g. 30 ft, fly 60 ft (hover)">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <label for="initiative" class="form-label">Initiative</label>
+                <div class="input-group">
+                    <span class="input-group-text">+</span>
+                    <input type="number" class="form-control" id="initiative" name="initiative" placeholder="e.g. 2" step="1">
+                </div>
+            </div>
+            <div class="col-md-3">
                 <label for="proficiency_bonus" class="form-label">Proficiency Bonus</label>
                 <div class="input-group">
                     <span class="input-group-text">+</span>
-                    <input type="text" class="form-control" id="proficiency_bonus" name="proficiency_bonus" placeholder="e.g. 2, 3, 5">
+                    <input type="number" class="form-control" id="proficiency_bonus" name="proficiency_bonus" placeholder="e.g. 2, 3, 5" step="1">
                 </div>
             </div>
         </div>

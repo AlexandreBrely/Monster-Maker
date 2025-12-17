@@ -39,43 +39,60 @@ require __DIR__ . '/../templates/action-buttons.php';
     <!-- FRONT: Boss Monster Statblock (A6 Landscape) -->
     <div class="boss-card-front">
         <div class="boss-card-inner">
-            <!-- Header -->
-            <div class="boss-header">
-                <div class="boss-title-section">
-                    <h1 class="boss-name"><?php echo htmlspecialchars($monster['name']); ?></h1>
-                    <p class="boss-type">
-                        <?php echo htmlspecialchars($monster['size']); ?> 
-                        <?php echo htmlspecialchars($monster['type']); ?>, 
-                        <?php echo htmlspecialchars($monster['alignment']); ?>
-                    </p>
-                </div>
-                <div class="boss-cr">
-                    <span class="cr-label">CR</span>
-                    <span class="cr-value"><?php echo htmlspecialchars($monster['challenge_rating']); ?></span>
-                </div>
-            </div>
-
-            <!-- Two Column Layout -->
-            <div class="boss-columns">
-                <!-- LEFT COLUMN: Core Stats & Abilities -->
-                <div class="boss-column-left">
-                    <!-- Quick Stats -->
+            <!-- Two-column flowing content -->
+            <div class="boss-content">
+                <div class="boss-flow">
+                    <!-- Header -->
+                    <div class="boss-header">
+                        <div class="boss-title-section">
+                            <h1 class="boss-name"><?php echo htmlspecialchars($monster['name']); ?></h1>
+                            <p class="boss-type">
+                                <?php echo htmlspecialchars($monster['size']); ?> 
+                                <?php echo htmlspecialchars($monster['type']); ?>, 
+                                <?php echo htmlspecialchars($monster['alignment']); ?>
+                            </p>
+                        </div>
+                        <div class="boss-cr">
+                            <span class="cr-label">CR</span>
+                            <span class="cr-value"><?php echo htmlspecialchars($monster['challenge_rating']); ?></span>
+                        </div>
+                    </div>
+                    <!-- Quick Stats: AC / HP / Speed / Initiative in 2x2 Grid -->
                     <div class="boss-stats-bar">
-                        <div class="boss-stat-item">
-                            <span class="stat-label">AC</span>
-                            <span class="stat-value"><?php echo (int)$monster['ac']; ?></span>
-                            <?php if (!empty($monster['ac_notes'])): ?>
-                                <span class="stat-note">(<?php echo htmlspecialchars($monster['ac_notes']); ?>)</span>
-                            <?php endif; ?>
+                        <!-- Row 1: AC | Initiative -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="boss-stat-item">
+                                    <span class="stat-label">AC</span>
+                                    <span class="stat-value"><?php echo (int)$monster['ac']; ?></span>
+                                    <?php if (!empty($monster['ac_notes'])): ?>
+                                        <span class="stat-note">(<?php echo htmlspecialchars($monster['ac_notes']); ?>)</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div class="boss-stat-item">
+                                    <span class="stat-label">Init</span>
+                                    <span class="stat-value">+<?php echo (int)($monster['initiative'] ?? 0); ?></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="boss-stat-item">
-                            <span class="stat-label">HP</span>
-                            <span class="stat-value"><?php echo (int)$monster['hp']; ?></span>
-                            <span class="stat-note">(<?php echo htmlspecialchars($monster['hit_dice']); ?>)</span>
-                        </div>
-                        <div class="boss-stat-item">
-                            <span class="stat-label">Speed</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($monster['speed']); ?></span>
+                        
+                        <!-- Row 2: HP | Speed -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="boss-stat-item">
+                                    <span class="stat-label">HP</span>
+                                    <span class="stat-value"><?php echo (int)$monster['hp']; ?></span>
+                                    <span class="stat-note">(<?php echo htmlspecialchars($monster['hit_dice']); ?>)</span>
+                                </div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div class="boss-stat-item">
+                                    <span class="stat-label">Speed</span>
+                                    <span class="stat-value"><?php echo htmlspecialchars($monster['speed']); ?></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -98,48 +115,45 @@ require __DIR__ . '/../templates/action-buttons.php';
 
                     <div class="boss-divider"></div>
 
-                    <!-- Skills & Senses -->
-                    <div class="boss-details">
-                        <?php if (!empty($skills)): ?>
-                            <div class="detail-line">
-                                <strong>Skills:</strong> <?php echo implode(', ', array_map('htmlspecialchars', $skills)); ?>
-                            </div>
-                        <?php endif; ?>
+                    <!-- Skills, Senses, Languages, Immunities -->
+                    <?php if (!empty($skills)): ?>
+                        <div class="detail-line">
+                            <strong>Skills:</strong> <?php echo implode(', ', array_map('htmlspecialchars', $skills)); ?>
+                        </div>
+                    <?php endif; ?>
 
-                        <?php if (!empty($senses)): ?>
-                            <div class="detail-line">
-                                <strong>Senses:</strong> <?php echo implode(', ', array_map('htmlspecialchars', $senses)); ?>
-                            </div>
-                        <?php endif; ?>
+                    <?php if (!empty($senses)): ?>
+                        <div class="detail-line">
+                            <strong>Senses:</strong> <?php echo implode(', ', array_map('htmlspecialchars', $senses)); ?>
+                        </div>
+                    <?php endif; ?>
 
-                        <?php if (!empty($monster['languages'])): ?>
-                            <div class="detail-line">
-                                <strong>Languages:</strong> <?php echo htmlspecialchars($monster['languages']); ?>
-                            </div>
-                        <?php endif; ?>
+                    <?php if (!empty($monster['languages'])): ?>
+                        <div class="detail-line">
+                            <strong>Languages:</strong> <?php echo htmlspecialchars($monster['languages']); ?>
+                        </div>
+                    <?php endif; ?>
 
-                        <?php if (!empty($monster['damage_immunities'])): ?>
-                            <div class="detail-line">
-                                <strong>Damage Immunities:</strong> <?php echo htmlspecialchars($monster['damage_immunities']); ?>
-                            </div>
-                        <?php endif; ?>
+                    <?php if (!empty($monster['damage_immunities'])): ?>
+                        <div class="detail-line">
+                            <strong>Damage Immunities:</strong> <?php echo htmlspecialchars($monster['damage_immunities']); ?>
+                        </div>
+                    <?php endif; ?>
 
-                        <?php if (!empty($monster['damage_resistances'])): ?>
-                            <div class="detail-line">
-                                <strong>Resistances:</strong> <?php echo htmlspecialchars($monster['damage_resistances']); ?>
-                            </div>
-                        <?php endif; ?>
+                    <?php if (!empty($monster['damage_resistances'])): ?>
+                        <div class="detail-line">
+                            <strong>Resistances:</strong> <?php echo htmlspecialchars($monster['damage_resistances']); ?>
+                        </div>
+                    <?php endif; ?>
 
-                        <?php if (!empty($monster['condition_immunities'])): ?>
-                            <div class="detail-line">
-                                <strong>Condition Immunities:</strong> <?php echo htmlspecialchars($monster['condition_immunities']); ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                    <?php if (!empty($monster['condition_immunities'])): ?>
+                        <div class="detail-line">
+                            <strong>Condition Immunities:</strong> <?php echo htmlspecialchars($monster['condition_immunities']); ?>
+                        </div>
+                    <?php endif; ?>
 
-                <!-- RIGHT COLUMN: Actions, Traits, Reactions, Legendary -->
-                <div class="boss-column-right">
+                    <div class="boss-divider"></div>
+
                     <!-- Traits -->
                     <?php if (!empty($traits) && count($traits) > 0): ?>
                         <div class="boss-section">
@@ -205,7 +219,7 @@ require __DIR__ . '/../templates/action-buttons.php';
                         <div class="boss-section">
                             <h3 class="section-title">LEGENDARY ACTIONS</h3>
                             <p class="legendary-intro">
-                                <?php echo htmlspecialchars($monster['monster_name'] ?? $monster['name']); ?> can take 3 legendary actions, choosing from the options below. Only one legendary action option can be used at a time and only at the end of another creature's turn. The creature regains spent legendary actions at the start of its turn.
+                                <?php echo htmlspecialchars($monster['name']); ?> can take 3 legendary actions.
                             </p>
                             <?php foreach ($legendaryActions as $action): ?>
                                 <?php if (!empty($action['name'])): ?>

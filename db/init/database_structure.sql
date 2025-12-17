@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS monster (
     hp INT DEFAULT 1,
     hit_dice VARCHAR(50),
     speed VARCHAR(100),
+    initiative INT DEFAULT 0,
     proficiency_bonus INT DEFAULT 0,
     strength INT DEFAULT 10,
     dexterity INT DEFAULT 10,
@@ -137,4 +138,32 @@ CREATE TABLE IF NOT EXISTS collection_monsters (
     UNIQUE KEY unique_collection_monster (collection_id, monster_id),
     INDEX idx_collection (collection_id),
     INDEX idx_monster (monster_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===== SPELL CARDS TABLE =====
+-- Stores D&D 5e spell cards for quick reference at the table
+-- Users can create custom spells or track favorite spells
+-- Future feature: Print spells as cards similar to monster cards
+CREATE TABLE IF NOT EXISTS spell_card (
+    spell_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT NOT NULL,
+    spell_name VARCHAR(120) NOT NULL,
+    spell_level SMALLINT,
+    spell_casting VARCHAR(20),
+    spell_range VARCHAR(75),
+    spell_components VARCHAR(25),
+    spell_duration VARCHAR(25),
+    spell_school VARCHAR(50),
+    spell_attack VARCHAR(50),
+    spell_damage VARCHAR(50),
+    spell_description TEXT NOT NULL,
+    spell_upcast TEXT,
+    spell_tags VARCHAR(50),
+    spells_available VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (u_id) REFERENCES users(u_id) ON DELETE CASCADE,
+    INDEX idx_spell_user (u_id),
+    INDEX idx_spell_level (spell_level),
+    INDEX idx_spell_school (spell_school)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

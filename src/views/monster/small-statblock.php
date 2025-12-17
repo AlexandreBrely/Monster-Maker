@@ -109,26 +109,45 @@ require __DIR__ . '/../templates/action-buttons.php';
         <div class="statblock-container d-flex flex-column h-100">
             <div class="statblock-top statblock-left">
                 <div class="basic-stats">
-                    <!-- Quick Stats: AC / HP / Speed -->
+                    <!-- Quick Stats: AC / HP / Speed / Initiative in 2x2 Grid -->
                     <div class="statblock-stats">
-                        <div class="stat-line ac-block">
-                            <span class="stat-label">AC:</span>
-                            <span class="stat-value"><?php echo (int)$monster['ac']; ?></span>
-                            <?php if (!empty($monster['ac_notes'])): ?>
-                                <span class="stat-detail">(<?php echo htmlspecialchars($monster['ac_notes']); ?>)</span>
-                            <?php endif; ?>
+                        <!-- Row 1: AC | Initiative -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="stat-line ac-block">
+                                    <span class="stat-label">AC:</span>
+                                    <span class="stat-value"><?php echo (int)$monster['ac']; ?></span>
+                                    <?php if (!empty($monster['ac_notes'])): ?>
+                                        <span class="stat-detail">(<?php echo htmlspecialchars($monster['ac_notes']); ?>)</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div class="stat-line initiative-block">
+                                    <span class="stat-label">Init:</span>
+                                    <span class="stat-value">+<?php echo (int)($monster['initiative'] ?? 0); ?></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-line hp-block">
-                            <span class="stat-label">HP:</span>
-                            <span class="stat-value"><?php echo (int)$monster['hp']; ?></span>
-                            <?php if (!empty($monster['hit_dice'])): ?>
-                                <span class="stat-detail">(<?php echo htmlspecialchars($monster['hit_dice']); ?>)</span>
-                            <?php endif; ?>
+                        
+                        <!-- Row 2: HP | Speed -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="stat-line hp-block">
+                                    <span class="stat-label">HP:</span>
+                                    <span class="stat-value"><?php echo (int)$monster['hp']; ?></span>
+                                    <?php if (!empty($monster['hit_dice'])): ?>
+                                        <span class="stat-detail">(<?php echo htmlspecialchars($monster['hit_dice']); ?>)</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div class="stat-line speed-block">
+                                    <span class="stat-label">Speed:</span>
+                                    <span class="stat-value"><?php echo htmlspecialchars($monster['speed']); ?></span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-line speed-block">
-                        <span class="stat-label">Speed:</span>
-                        <span class="stat-value"><?php echo htmlspecialchars($monster['speed']); ?></span>
                     </div>
 
                     <!-- Ability Scores grid -->

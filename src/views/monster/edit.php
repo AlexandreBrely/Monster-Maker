@@ -229,16 +229,27 @@ if (!empty($old['saving_throws'])) {
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="challenge_rating" class="form-label">Challenge Rating</label>
                         <input type="text" class="form-control" id="challenge_rating" name="challenge_rating" 
                                value="<?php echo htmlspecialchars($old['challenge_rating'] ?? '0'); ?>"
                                placeholder="e.g. 5 (1,800 XP)">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <label for="initiative" class="form-label">Initiative</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+</span>
+                            <input type="number" class="form-control" id="initiative" name="initiative" 
+                                   value="<?php echo htmlspecialchars($old['initiative'] ?? 0); ?>" step="1">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <label for="proficiency_bonus" class="form-label">Proficiency Bonus</label>
-                        <input type="number" class="form-control" id="proficiency_bonus" name="proficiency_bonus" 
-                               value="<?php echo htmlspecialchars($old['proficiency_bonus'] ?? 0); ?>" min="0">
+                        <div class="input-group">
+                            <span class="input-group-text">+</span>
+                            <input type="number" class="form-control" id="proficiency_bonus" name="proficiency_bonus" 
+                                   value="<?php echo htmlspecialchars($old['proficiency_bonus'] ?? 0); ?>" min="0" step="1">
+                        </div>
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -517,8 +528,12 @@ if (!empty($old['saving_throws'])) {
             </div>
         </div>
 
-        <!-- LEGENDARY ACTIONS (if legendary monster) -->
-        <?php if ($monster['is_legendary']): ?>
+        <!-- LEGENDARY ACTIONS (if boss monster) -->
+        <?php 
+        // Check if this is a boss monster (card_size = 1) or legendary flag is set
+        $isBossMonster = (($old['card_size'] ?? $monster['card_size'] ?? 2) == 1) || (!empty($monster['is_legendary']));
+        if ($isBossMonster): 
+        ?>
         <div class="card mb-3">
             <div class="card-header color-code-legendary">
                 <h5 class="mb-0">Legendary Actions</h5>

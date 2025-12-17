@@ -49,7 +49,7 @@
     font-size: 0.65rem;
 }
 
-/* Header: Monster name, type, CR */
+/* Header: Monster name, type, CR - now inside column flow */
 .boss-header {
     display: flex;
     justify-content: space-between;
@@ -57,6 +57,8 @@
     border-bottom: 2px solid #333;
     padding-bottom: 4px;
     margin-bottom: 6px;
+    break-inside: avoid;
+    break-after: avoid;
 }
 
 .boss-title-section {
@@ -65,7 +67,7 @@
 
 .boss-name {
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 600;
     color: #333;
     margin: 0;
     font-family: "New Rocker", system-ui;
@@ -73,7 +75,7 @@
 }
 
 .boss-type {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     font-style: italic;
     color: #666;
     margin: 2px 0 0 0;
@@ -103,49 +105,45 @@
     line-height: 1;
 }
 
-/* Two column layout */
-/*
- * For beginners:
- * CSS Grid creates the two-column layout.
- * - grid-template-columns: 1fr 1fr = two equal columns
- * - 1fr means "1 fraction" - each column gets 50% of the space
- * - gap: 10px = space between columns
- * - overflow: hidden = prevents content from spilling outside the card
- */
-.boss-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;  /* Two equal columns */
-    gap: 10px;                       /* Space between columns */
-    flex: 1;                         /* Grow to fill available space */
-    min-height: 0;                   /* Allow columns to shrink */
-    overflow: hidden;                /* Hide overflow */
+/* Content container - uses CSS columns for smooth overflow */
+.boss-content {
+    flex: 1;
+    min-height: 0;
+    overflow: visible;
 }
 
-.boss-column-left,
-.boss-column-right {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow-y: auto;
-    padding-right: 4px;
+/* Two-column flowing layout with center split */
+.boss-flow {
+    column-count: 2;
+    column-gap: 16px;
+    column-rule: 2px solid #999;
+    column-fill: auto;
+    height: 100%;
+    font-size: 0.48rem;
+    line-height: 1.2;
 }
 
-/* Scrollbar styling */
-.boss-column-left::-webkit-scrollbar,
-.boss-column-right::-webkit-scrollbar {
-    width: 4px;
+/* Sections can break across columns for better flow */
+.boss-section {
+    margin-bottom: 6px;
 }
 
-.boss-column-left::-webkit-scrollbar-thumb,
-.boss-column-right::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 2px;
+/* But prevent individual entries from breaking */
+.entry-item {
+    break-inside: avoid;
 }
 
-/* Quick stats bar */
+/* Stats, abilities, and detail lines should not break */
+.boss-stats-bar,
+.boss-abilities,
+.detail-line {
+    break-inside: avoid;
+}
+
+/* Quick stats bar - 2x2 Grid Layout (AC | Initiative) (HP | Speed) */
 .boss-stats-bar {
-    display: flex;
-    flex-direction: column;
+    /* Container for Bootstrap grid rows - let grid do the layout */
+    display: block;
     gap: 2px;
     font-size: 0.6rem;
 }
@@ -167,88 +165,101 @@
     color: #333;
 }
 
+/* Smaller font for speed values with multiple types (walk, fly, swim) */
+.stat-value {
+    font-size: 0.52rem;
+}
+
 .stat-note {
-    font-size: 0.55rem;
+    font-size: 0.48rem;
     color: #666;
+}
+
+/* Bootstrap grid row and column styles override */
+.boss-stats-bar .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.boss-stats-bar .col-6 {
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 /* Divider */
 .boss-divider {
     height: 1px;
-    background: #ddd;
-    margin: 3px 0;
-}
-
-/* Abilities grid */
-.boss-abilities {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    text-align: center;
-}
-
-.boss-ability {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.ability-label {
-    font-size: 0.55rem;
-    font-weight: 700;
-    color: #333;
-}
-
-.ability-value {
-    font-size: 0.6rem;
-    font-weight: 700;
-    color: #333;
-}
-
-.save-bonus {
-    font-size: 0.55rem;
-    color: #666;
+    background: #999;
+    margin: 4px 0;
+    break-inside: avoid;
 }
 
 /* Details section */
-.boss-details {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 0.55rem;
-    line-height: 1.2;
-}
-
 .detail-line {
     color: #333;
+    font-size: 0.48rem;
+    line-height: 1.2;
+    margin-bottom: 3px;
+    break-inside: avoid;
 }
 
 .detail-line strong {
     font-weight: 700;
     color: #000;
 }
-
-/* Sections (Traits, Actions, etc.) */
-.boss-section {
-    margin-bottom: 6px;
+.boss-abilities {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2px;
+    text-align: center;
+    margin-bottom: 4px;
+    break-inside: avoid;
 }
 
+.boss-ability {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.ability-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.ability-value {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.save-bonus {
+    font-size: 0.48rem;
+    font-weight: 700;
+    color: #666;
+}
+
+/* Sections (Traits, Actions, etc.) */
 .section-title {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 700;
     color: #8B0000;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    margin: 0 0 3px 0;
+    margin: 3px 0 2px 0;
     padding-bottom: 2px;
-    border-bottom: 1px solid #8B0000;
+    border-bottom: 1.5px solid #8B0000;
+    break-after: avoid;
 }
 
 .entry-item {
-    font-size: 0.55rem;
-    line-height: 1.25;
+    font-size: 0.48rem;
+    line-height: 1.2;
     margin-bottom: 3px;
     color: #333;
+    break-inside: avoid;
 }
 
 .entry-name {
@@ -262,11 +273,11 @@
 }
 
 .legendary-intro {
-    font-size: 0.55rem;
+    font-size: 0.47rem;
     font-style: italic;
     color: #555;
-    margin-bottom: 4px;
-    line-height: 1.25;
+    margin-bottom: 3px;
+    line-height: 1.2;
 }
 
 /* BACK: Full body image (same A6 landscape dimensions) */
