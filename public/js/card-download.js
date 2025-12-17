@@ -1,19 +1,14 @@
 /**
  * Card Download Functionality
  * Captures monster cards and downloads them as high-quality PNG images
- * 
- * For beginners:
- * This uses the html2canvas library to convert HTML elements into images.
- * 
+ * Uses html2canvas to convert card DOM to images.
  * How it works:
  * 1. Find the card element in the DOM (Document Object Model)
  * 2. Use html2canvas to "screenshot" the card with high quality settings
  * 3. Convert the canvas to a downloadable image file
  * 4. Trigger browser download
  * 
- * Dependencies:
- * - html2canvas: External library for HTML-to-image conversion
- *   CDN: https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+ * Dependency: html2canvas (CDN available)
  */
 
 /**

@@ -8,16 +8,8 @@ use App\Services\FileUploadService;
 /**
  * Lair Card Controller
  * Handles CRUD operations for lair action cards (horizontal landscape format)
- * 
- * For beginners:
- * A controller is the "traffic director" of your app.
- * When a user visits a URL like index.php?url=lair-card-create,
- * the router sends the request to this controller.
- * The controller then:
- * 1. Gets data from the user (forms)
- * 2. Validates it
- * 3. Uses the model to save/retrieve from database
- * 4. Shows the appropriate view (HTML page)
+ * Controller responsibilities:
+ * - Handle requests, validate input, call model, render view.
  */
 class LairCardController
 {
@@ -65,15 +57,8 @@ class LairCardController
 
     /**
      * Handle lair card creation
-     * 
-     * For beginners:
-     * This processes the form when user submits a new lair card.
-     * Steps:
-     * 1. Extract form data (monster name, lair actions, etc.)
-     * 2. Validate it (check required fields)
-     * 3. Handle image upload if provided
-     * 4. If valid: save to database and redirect to list
-     * 5. If errors: show form again with error messages
+     * Process submitted create form: extract data, validate, upload optional image,
+     * save to DB or re-render with errors.
      */
     public function store()
     {
@@ -200,13 +185,7 @@ class LairCardController
     }
 
     /**
-     * Extract form data
-     * 
-     * For beginners:
-     * This reads all the form fields from $_POST and organizes them.
-     * Special handling for lair actions:
-     * - The form has multiple action fields (name[], description[])
-     * - We loop through them and build an array of action objects
+     * Extract form data and organize lair actions from multiple form inputs.
      */
     private function getFormData()
     {

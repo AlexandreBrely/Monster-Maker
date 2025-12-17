@@ -12,11 +12,8 @@ use PDO;
  * - Lair actions (special actions that occur on initiative count 20)
  * - Regional effects (environmental changes around the lair)
  * - Lair description and atmosphere
- * 
- * For beginners:
- * This model handles all database operations for lair cards.
- * Think of it as the "data manager" that knows how to save, retrieve,
- * update, and delete lair cards from the database.
+ * Model responsible for persistence and retrieval of lair cards:
+ * create, read, update, delete, and JSON (de)serialization.
  */
 class LairCard
 {
@@ -47,14 +44,10 @@ class LairCard
 
     /**
      * Get all lair cards for a specific user
-     * 
-     * For beginners:
-     * This fetches all lair cards that belong to one user.
      * Steps:
-     * 1. Prepare SQL query with placeholder (:userId) for security
-     * 2. Execute query with actual user ID
-     * 3. Convert JSON fields (like lair_actions) from text to PHP arrays
-     * 4. Return array of lair cards
+     * 1. Prepare parameterized SQL (:userId)
+     * 2. Execute with actual user ID
+     * 3. Decode JSON fields into PHP arrays
      */
     public function getByUser($userId)
     {
@@ -97,12 +90,8 @@ class LairCard
     }
 
     /**
-     * Create a new lair card
-     * 
-     * For beginners:
-     * This saves a new lair card to the database.
-     * We convert PHP arrays (lair_actions) to JSON text before storing,
-     * because databases can't store arrays directly.
+     * Create a new lair card.
+     * Converts lair_actions array to JSON before storing in DB.
      */
     public function create($data, $userId)
     {
@@ -203,17 +192,8 @@ class LairCard
     }
 
     /**
-     * Deserialize JSON fields in a lair card record
-     * 
-     * For beginners:
-     * "Deserialize" means converting JSON text back to PHP arrays.
-     * The database stores lair_actions as JSON text like:
-     * '[{"name":"Quake","description":"Ground shakes"}]'
-     * 
-     * This method converts it back to a PHP array so we can loop through it:
-     * [['name' => 'Quake', 'description' => 'Ground shakes']]
-     * 
-     * The & before $card means we modify the original array, not a copy.
+     * Deserialize JSON fields in a lair card record.
+     * Converts lair_actions from JSON text back to PHP array for iteration.
      */
     private function deserializeJsonFields(&$card)
     {

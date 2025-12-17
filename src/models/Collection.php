@@ -17,7 +17,7 @@ use App\Models\Database;
  * 
  * In our app, users create collections to organize monsters they want to print or use.
  * 
- * FOR BEGINNERS - DATABASE RELATIONSHIPS:
+* Database relationships:
  * This is a MANY-TO-MANY relationship:
  * - One monster can be in multiple collections (like a song in multiple playlists)
  * - One collection can have multiple monsters (like a playlist with multiple songs)
@@ -58,24 +58,11 @@ class Collection
     }
 
     /**
-     * Create default "To Print" collection for a new user
-     * 
-     * FOR BEGINNERS - WHEN IS THIS CALLED?
-     * When a user registers for an account, we automatically create a collection
-     * called "To Print" for them. This is their main queue for cards to export as PDF.
-     * 
-     * WHY AUTO-CREATE?
-     * - Better user experience: they can start organizing immediately
-     * - Ensures every user has at least one collection
-     * - "To Print" is the core feature (printing cards), so we set it up by default
-     * 
-     * THE is_default FLAG:
-     * - is_default = 1 means this is the auto-created "To Print" collection
-     * - is_default = 0 means user created it manually
-     * - Users cannot delete the default collection (safety measure)
+     * Create default "To Print" collection for a new user.
+     * Auto-created when user registers; is_default = 1 prevents deletion.
      * 
      * @param int $userId The new user's ID from the users table
-     * @return bool True if created successfully, false if creation failed
+     * @return bool True if created successfully
      */
     public function createDefaultCollection(int $userId): bool
     {
@@ -89,14 +76,8 @@ class Collection
     }
 
     /**
-     * Create a new custom collection
-     * 
-     * FOR BEGINNERS - HOW CREATING WORKS:
-     * 1. User fills out "Create Collection" form
-     * 2. Controller validates and calls this method
-     * 3. We check if collection name already exists (prevent duplicates)
-     * 4. Insert new row into collections table
-     * 5. Return the new collection's ID
+     * Create a new custom collection.
+     * Validates uniqueness per user before inserting.
      * 
      * @param int $userId User ID (owner)
      * @param string $collectionName Collection name (max 100 chars)
@@ -125,15 +106,8 @@ class Collection
     }
 
     /**
-     * Get all collections for a specific user
-     * 
-     * FOR BEGINNERS - THE LEFT JOIN:
-     * We want to show monster count for each collection.
-     * Problem: Some collections might have ZERO monsters.
-     * Solution: LEFT JOIN (includes collections even if they have no monsters)
-     * 
-     * INNER JOIN would exclude empty collections
-     * LEFT JOIN includes ALL collections, null if no monsters
+     * Get all collections for a specific user.
+     * LEFT JOIN includes empty collections; sorted by default first, then alphabetically.
      * 
      * @param int $userId User ID
      * @return array Array of collections with monster counts
@@ -211,20 +185,11 @@ class Collection
     }
 
     /**
-     * Delete a collection
-     * 
-     * FOR BEGINNERS - CASCADE DELETE:
-     * When we delete a collection, what happens to the monsters in it?
-     * Answer: The MONSTERS are NOT deleted (they still exist in monster table)
-     * Only the LINKS in collection_monsters table are deleted (foreign key cascade)
-     * 
-     * Think of it like deleting a playlist:
-     * - Playlist is gone
-     * - Songs still exist
-     * - Only the "this song is in this playlist" records are removed
+     * Delete a collection.
+     * Removes only the link entries (via foreign key cascade); monsters remain in DB.
      * 
      * @param int $collectionId Collection ID to delete
-     * @return bool True on success, false on failure
+     * @return bool True on success
      */
     public function delete(int $collectionId): bool
     {
@@ -237,25 +202,12 @@ class Collection
     }
 
     /**
-     * Add a monster to a collection
-     * 
-     * FOR BEGINNERS - HOW THIS WORKS:
-     * This creates a link between a collection and a monster in the junction table.
-     * Like adding a song to a playlist - the song still exists independently,
-     * but now there's a record saying "this song is in this playlist".
-     * 
-     * EXAMPLE:
-     * User clicks "Add to To Print" on a dragon monster
-     * This inserts: collection_id=1, monster_id=42 into collection_monsters table
-     * Now the dragon appears when viewing the "To Print" collection
-     * 
-     * DUPLICATE PREVENTION:
-     * We check if monster is already in collection before adding.
-     * Like Spotify preventing you from adding the same song twice to a playlist.
+     * Add a monster to a collection.
+     * Creates link in junction table; prevents duplicates.
      * 
      * @param int $collectionId Which collection to add to
      * @param int $monsterId Which monster to add
-     * @return bool True if added successfully, false if already exists or error
+     * @return bool True if added successfully; false if already exists
      */
     public function addMonster(int $collectionId, int $monsterId): bool
     {
@@ -274,19 +226,12 @@ class Collection
     }
 
     /**
-     * Remove a monster from a collection
-     * 
-     * FOR BEGINNERS - DELETE vs REMOVE:
-     * This REMOVES the link (deletes from collection_monsters table)
-     * The monster itself is NOT deleted (still exists in monster table)
-     * 
-     * Like removing a song from a playlist:
-     * - Song still exists in your library
-     * - Just no longer in that specific playlist
+     * Remove a monster from a collection.
+     * Deletes link; monster itself remains in DB.
      * 
      * @param int $collectionId Collection ID
      * @param int $monsterId Monster ID
-     * @return bool True on success, false on failure
+     * @return bool True on success
      */
     public function removeMonster(int $collectionId, int $monsterId): bool
     {
@@ -301,31 +246,11 @@ class Collection
     }
 
     /**
-     * Get all monsters in a collection
-     * 
-     * FOR BEGINNERS - SQL JOIN EXPLAINED:
-     * We need data from 2 tables:
-     * - collection_monsters: tells us which monsters are in the collection
-     * - monster: has the actual monster data (name, image, stats, etc.)
-     * 
-     * We use INNER JOIN to combine rows from both tables:
-     * "Give me all monsters WHERE their ID matches a row in collection_monsters"
-     * 
-     * VISUAL EXAMPLE:
-     * collection_monsters:        monster:
-     * | monster_id |              | monster_id | name     |
-     * |------------|              |------------|----------|
-     * | 10         |    JOIN →    | 10         | Dragon   |
-     * | 15         |              | 15         | Goblin   |
-     * 
-     * Result: We get full data for Dragon and Goblin
-     * 
-     * WHY ORDER BY added_at DESC?
-     * DESC = descending = newest first
-     * Shows most recently added monsters at the top (like Instagram feed)
+     * Get all monsters in a collection.
+     * INNER JOIN combines collection_monsters with full monster data; ordered newest first.
      * 
      * @param int $collectionId Which collection to get monsters from
-     * @return array Array of monster objects with all their data + added_at timestamp
+     * @return array Array of monster objects with all data + added_at timestamp
      */
     public function getMonsters(int $collectionId): array
     {

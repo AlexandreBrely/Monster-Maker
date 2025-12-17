@@ -2,10 +2,8 @@
 /**
  * Mini Monster Card Template
  * Displays a compact statblock card for use in listings (index, my-monsters)
- * 
- * For beginners:
- * This is a reusable template (partial) that displays one monster card.
- * It's included in listing pages using: require 'monster-card-mini.php'
+ * Reusable template (partial) for a compact monster card used in listings.
+ * Included via: require 'monster-card-mini.php'
  * 
  * Expected variables (must be set before including this file):
  * - $monster: array with monster data (must be deserialized with JSON fields as arrays)
@@ -92,30 +90,8 @@ $likeCount = (int)($monster['like_count'] ?? 0);
                     <?php endif; ?>
                     
                     <div class="d-flex gap-2 align-items-center">
-                        <!-- 
-                            FOR BEGINNERS - ADD TO COLLECTION DROPDOWN:
-                            
-                            WHAT IS THIS?
-                            A dropdown button that shows all user's collections.
-                            Clicking a collection adds this monster to that collection.
-                            
-                            HOW IT WORKS:
-                            1. Click "+" button
-                            2. Dropdown opens showing "To Print", "My Favorites", etc.
-                            3. Click collection name
-                            4. JavaScript sends AJAX request to server
-                            5. Server adds monster to collection
-                            6. Success message appears
-                            7. No page reload!
-                            
-                            WHY ONLY SHOW IF LOGGED IN?
-                            Anonymous visitors can't create collections.
-                            !empty($userCollections) also checks they have at least one collection.
-                            
-                            ONCLICK EVENT HANDLING:
-                            event.stopPropagation() prevents dropdown click from triggering
-                            the card's click event (which would navigate to monster page)
-                        -->
+                        <!-- Add-to-collection dropdown: lists user's collections and sends AJAX request on click.
+                             Note: event.stopPropagation() prevents navigating to the monster page. -->
                         <?php if (isset($_SESSION['user']) && !empty($userCollections ?? [])): ?>
                             <div class="dropdown" onclick="event.stopPropagation(); event.preventDefault();">
                                 <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
@@ -125,24 +101,8 @@ $likeCount = (int)($monster['like_count'] ?? 0);
                                 </button>
                                 <ul class="dropdown-menu">
                                     <?php 
-                                    /*
-                                     * FOR BEGINNERS - DATA ATTRIBUTES:
-                                     * data-* attributes store custom data on HTML elements
-                                     * 
-                                     * WHY USE THEM?
-                                     * JavaScript can read these values when user clicks
-                                     * We need to know: which monster, which collection
-                                     * 
-                                     * NAMING:
-                                     * HTML: data-monster-id="42"
-                                     * JavaScript: element.dataset.monsterId (camelCase!)
-                                     * 
-                                     * ONCLICK:
-                                     * onclick="addToCollection(event, this)"
-                                     * - event = click event object
-                                     * - this = the <a> element that was clicked
-                                     * Passes both to JavaScript function
-                                     */
+                                                /* Data attributes: HTML data-* read via element.dataset to
+                                                    pass monster/collection IDs to addToCollection(event, el). */
                                     foreach ($userCollections as $collection): 
                                     ?>
                                         <li>

@@ -10,9 +10,8 @@ namespace App\Services;
  * Before this service, we had duplicate upload code in 3 different controllers.
  * Now we have ONE place to maintain upload logic.
  * 
- * FOR BEGINNERS:
- * Think of a "service" as a helper class that does ONE specific job really well.
- * This service's job is: "safely upload files to the server"
+ * Service = helper class focused on a single responsibility.
+ * Purpose: safely upload files to the server.
  * 
  * WHY CENTRALIZE UPLOADS?
  * 1. DRY Principle (Don't Repeat Yourself) - write once, use everywhere
@@ -37,11 +36,7 @@ class FileUploadService
 {
     /**
      * Default upload directory (relative to public folder)
-     * 
-     * FOR BEGINNERS:
-     * __DIR__ is a PHP magic constant that means "the directory this file is in"
-     * /../.. means "go up 2 directories"
-     * So this resolves to: PROJECT_ROOT/public/uploads/
+    * Resolves to PROJECT_ROOT/public/uploads/ using __DIR__.
      * 
      * WHY PUBLIC/UPLOADS?
      * - Public folder is accessible via web browser (users can view uploaded images)
@@ -52,7 +47,7 @@ class FileUploadService
     /**
      * Upload a file with security validation
      * 
-     * FOR BEGINNERS - WHAT HAPPENS WHEN YOU UPLOAD A FILE:
+    * Upload flow:
      * 1. User clicks "Choose File" and selects image.jpg
      * 2. Browser sends file to server (stored temporarily in /tmp/)
      * 3. PHP puts file info in $_FILES array
@@ -164,11 +159,8 @@ class FileUploadService
     }
 
     /**
-     * Generate unique filename to prevent collisions
-     * 
-     * FOR BEGINNERS:
+     * Generate unique filename to prevent collisions.
      * Pattern: timestamp_randomstring_originalname.ext
-     * Example: 1702747200_a1b2c3d4_dragon.jpg
      * 
      * @param string $originalFilename Original filename from upload
      * @return string Unique filename safe for filesystem
@@ -205,11 +197,8 @@ class FileUploadService
     }
 
     /**
-     * Delete a file from uploads directory
-     * 
-     * FOR BEGINNERS - SECURITY:
-     * This has path traversal protection to prevent hackers from deleting
-     * system files or files outside the uploads directory.
+     * Delete a file from uploads directory.
+     * Includes path traversal protection to prevent unauthorized file deletion.
      * 
      * @param string $filename Filename to delete
      * @param string $uploadDir Subdirectory (e.g., 'monsters', 'avatars')

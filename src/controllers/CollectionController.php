@@ -10,13 +10,8 @@ use App\Models\Monster;
  * 
  * WHAT IS THIS CONTROLLER?
  * Handles all operations related to Collections (organizing monsters for printing).
- * 
- * FOR BEGINNERS - MVC PATTERN:
- * Controller = Traffic cop of your application
- * - Receives requests from users (via router)
- * - Asks Model for data (database operations)
- * - Passes data to View (HTML display)
- * - Sends response back to user
+ * MVC role:
+ * - Handle request, call models, render views, return response.
  * 
  * ROUTES HANDLED:
  * - GET  /collections              → index() - List all user's collections
@@ -61,14 +56,7 @@ class CollectionController
 
     /**
      * Verify user owns a collection
-     * 
-     * FOR BEGINNERS - AUTHORIZATION vs AUTHENTICATION:
-     * - Authentication = "Who are you?" (login check)
-     * - Authorization = "Are you allowed to do this?" (ownership check)
-     * 
-     * Example: User A is logged in (authenticated) but tries to delete User B's collection.
-     * Authorization check prevents this by verifying ownership.
-     * 
+     * Ownership check (authorization) after login (authentication).
      * @param int $collectionId Collection ID to check
      * @return bool True if user owns collection, false otherwise
      */
@@ -85,15 +73,7 @@ class CollectionController
 
     /**
      * Display all collections for logged-in user
-     * 
-     * FOR BEGINNERS - HOW THIS WORKS:
-     * 1. User clicks "Collections" in navbar
-     * 2. Router calls this method
-     * 3. We fetch all collections for this user from database
-     * 4. We load the view (collection/index.php) and pass it the data
-     * 5. View displays collections in a grid
-     * 
-     * GET /collections
+     * GET /collections: fetch user's collections and render grid view.
      */
     public function index()
     {
@@ -107,13 +87,7 @@ class CollectionController
 
     /**
      * View a specific collection with all its monsters
-     * 
-     * FOR BEGINNERS - QUERY PARAMETERS:
-     * URL: /collection-view?id=5
-     * The ?id=5 part is a "query parameter"
-     * We access it in PHP with $_GET['id']
-     * 
-     * GET /collection-view?id=X
+     * GET /collection-view?id=X — uses $_GET['id'] query parameter.
      */
     public function view()
     {
@@ -134,17 +108,8 @@ class CollectionController
     }
 
     /**
-     * Create a new collection
-     * 
-     * FOR BEGINNERS - HANDLING BOTH GET AND POST:
-     * Same URL, different behavior based on request method:
-     * - GET request: Show the empty form (display create.php)
-     * - POST request: Process the submitted form data
-     * 
-     * This is a common pattern in web development.
-     * 
-     * GET  /collection-create → Show form
-     * POST /collection-create → Process form
+     * Create a new collection.
+     * GET: Show form; POST: Process form submission.
      */
     public function create()
     {
@@ -242,15 +207,8 @@ class CollectionController
     }
 
     /**
-     * Delete a collection
-     * 
-     * FOR BEGINNERS - WHY POST FOR DELETE?
-     * Deleting is a destructive action. We use POST (not GET) because:
-     * 1. Security: GET can be triggered by images, links, prefetch
-     * 2. Semantics: GET should be safe (read-only), POST modifies data
-     * 3. CSRF protection: POST allows us to add CSRF tokens
-     * 
-     * POST /collection-delete
+     * Delete a collection (POST only).
+     * Prevents accidental deletes via GET requests; cannot delete default "To Print".
      */
     public function delete()
     {
@@ -289,21 +247,9 @@ class CollectionController
     }
 
     /**
-     * Add a monster to a collection (AJAX endpoint)
-     * 
-     * FOR BEGINNERS - WHAT IS AJAX?
-     * AJAX = Asynchronous JavaScript And XML (nowadays we use JSON, not XML)
-     * It allows updating parts of a page without reloading the entire page.
-     * 
-     * TRADITIONAL WAY (without AJAX):
-     * 1. User clicks "Add to Collection"
-     * 2. Browser submits form
-     * 3. Server processes request
-     * 4. Entire page reloads
-     * 5. User sees result
-     * 
-     * AJAX WAY (what we do here):
-     * 1. User clicks "Add to Collection"
+     * Add a monster to a collection (AJAX endpoint).
+     * Returns JSON; no page reload. Validates ownership before inserting.
+     */
      * 2. JavaScript sends request in background (fetch())
      * 3. Server processes request
      * 4. Server returns JSON: { "success": true, "message": "Added!" }

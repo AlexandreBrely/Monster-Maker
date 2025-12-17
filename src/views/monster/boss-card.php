@@ -2,10 +2,8 @@
 /**
  * Boss Monster Card (Horizontal A6 Format - Two Column Layout)
  * Displays boss monsters in landscape A6 format (5.8in x 4.1in)
- * 
- * For beginners:
- * This view displays boss monsters (legendary creatures) in a two-column layout.
- * 
+ * Two-column A6 boss card layout for legendary monsters.
+ *
  * Card Structure:
  * - Front Card (5.8in × 4.1in horizontal):
  *   - Left Column: AC, HP, Speed, Abilities, Skills, Senses, Immunities
@@ -55,6 +53,9 @@ require __DIR__ . '/../templates/action-buttons.php';
                         <div class="boss-cr">
                             <span class="cr-label">CR</span>
                             <span class="cr-value"><?php echo htmlspecialchars($monster['challenge_rating']); ?></span>
+                            <?php if (!empty($monsterXp)): ?>
+                                <span class="cr-xp"><?php echo number_format($monsterXp); ?> XP</span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <!-- Quick Stats: AC / HP / Speed / Initiative in 2x2 Grid -->

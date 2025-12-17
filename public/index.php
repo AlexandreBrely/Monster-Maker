@@ -37,12 +37,7 @@ $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
 
 // Simple Router: map route keys to controllers
 // Format: 'route' => ['controller' => 'ControllerName', 'action' => 'methodName']
-//
-// For beginners:
-// This array maps URLs to controller methods.
-// Example: index.php?url=my-lair-cards
-//   → Routes to LairCardController->myLairCards()
-//   → Controller prepares data and shows the view
+// Example: index.php?url=my-lair-cards → LairCardController->myLairCards()
 $routes = [
     'home' => ['controller' => 'HomeController', 'action' => 'index'],
     'login' => ['controller' => 'AuthController', 'action' => 'login'],

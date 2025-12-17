@@ -1,4 +1,6 @@
-# Monster Maker - Collections System - Jury Presentation
+# Monster Maker – Jury Presentation (Consolidated)
+
+This document consolidates the overall technical presentation and the collections-focused presentation into a single reference. It covers architecture, key features, collections phase, boss card work, and recent improvements to editing, layout, and exports.
 
 ## Project Overview
 
@@ -13,7 +15,7 @@
 1. **Centralized File Upload Service** - Eliminated 120 lines of code duplication
 2. **Collections Feature** - Complete CRUD system for organizing monsters
 3. **AJAX Integration** - Instant "Add to Collection" without page reloads
-4. **Educational Documentation** - 500+ lines of beginner-friendly comments
+4. **Developer Documentation** - 500+ lines of concise inline comments
 
 ---
 
@@ -304,7 +306,7 @@ public function addMonster() {
 
 ---
 
-## 5. Educational Documentation
+## 5. Documentation Approach
 
 ### Documentation Statistics
 - **500+ lines** of educational comments added
@@ -313,16 +315,15 @@ public function addMonster() {
 
 ### Documentation Approach
 
-#### 1. "FOR BEGINNERS" Sections
+#### 1. Concept Primers
 Explain concepts before code:
 ```php
 /**
- * FOR BEGINNERS - WHAT IS A COLLECTION?
- * A collection is like a folder or playlist for organizing monsters.
- * Think of it like:
+ * Overview - What is a collection?
+ * A collection groups monsters, similar to:
  * - Music playlists (group songs you like)
  * - Photo albums (group related photos)
- * - Bookmarks folders (organize websites)
+ * - Bookmark folders (organize websites)
  */
 ```
 
@@ -550,17 +551,39 @@ if (strpos($realPath, $uploadDir) !== 0) {
 
 ---
 
+## Boss Card & Recent Improvements
+
+### Boss A6 Card — Two-Column Flow
+- Header inside flow: Name/type/CR begin in column one and flow naturally.
+- Column behavior: `column-count: 2`, `column-gap`, `column-rule`; `column-fill: auto` fills column one before spilling to column two.
+- Overflow control: `break-inside: avoid` on blocks to prevent awkward splits.
+- Visual polish: Thinner titles, tighter spacing (Speed row, CR chip), and a centered vertical rule.
+
+### Legendary Actions — Edit & Display
+- Edit visibility: Legendary section shows for boss cards (`card_size == 1`) or legacy `is_legendary`.
+- Data shape: `legendary_action_names[]` and `legendary_actions[]`; server parses cost from names like “(Costs X Actions)”.
+- Controller: `buildLegendaryActions()` extracts `cost` and normalizes objects.
+- View: Boss card renders action names and costs when present.
+
+### CR → XP Mapping via Controller
+- Helper: `MonsterController::getXpForCR(string $cr): ?int` centralizes CR→XP mapping.
+- Views consume `$monsterXp` provided by the controller; no mapping logic in templates.
+
+### Image Export
+- Client: `public/js/card-download.js` uses `html2canvas` to export PNGs sized for printing (A6).
+- Handles device pixel ratio and background to keep exports crisp.
+
 ## 13. Conclusion
 
-The Collections System successfully achieves its goals:
+Monster Maker successfully achieves its goals across collections, card design, and developer experience:
 
-1. **Technical Excellence**: Clean MVC architecture, secure implementation, modern AJAX
-2. **Code Quality**: Well-documented, maintainable, reusable components
-3. **User Experience**: Fast, intuitive, responsive design
-4. **Educational Value**: 500+ lines of beginner-friendly documentation
-5. **Scalability**: Foundation ready for Phase 2 (PDF Export)
+1. **Technical Excellence**: Clean MVC, secure implementation, modern AJAX, PDF-ready layout.
+2. **Code Quality**: Well-documented, maintainable, reusable components; centralized service patterns.
+3. **User Experience**: Fast, intuitive, responsive design; polished A6 card layouts with natural overflow.
+4. **Developer Accessibility**: Concise inline documentation facilitates onboarding and maintenance.
+5. **Scalability**: Foundation ready for batch exports, sharing, and analytics.
 
-**Key Achievement**: Built a production-ready feature while making the codebase more accessible to junior developers through comprehensive educational documentation.
+**Key Achievement**: Built a production-ready feature and card system while making the codebase accessible and maintainable for junior developers.
 
 ---
 

@@ -1,14 +1,10 @@
-# Monster Maker - Technical Presentation for Jury
+# Moved: Jury Presentation
 
-## Project Overview
+This file has been consolidated into a single, canonical document:
 
-Monster Maker is a **full-stack MVC web application** demonstrating professional PHP development with user authentication, CRUD operations, file uploads, and database interactions. The application creates D&D 5e-style monster stat blocks in multiple printable card formats (playing card size, A6 horizontal boss cards, and landscape lair action cards).
+- See docs/JURY_PRESENTATION.md for the full merged presentation (architecture, collections, layout, exports).
 
-**Focus:** The inner workings of MVC architecture, data flow, security practices, database integration, and comprehensive code documentation following industry best practices.
-
-**Recent Major Update (December 2025):** Complete codebase documentation pass with detailed inline comments explaining PHP functions, JavaScript methods, D&D mechanics, security patterns, and database operations.
-
----
+Keeping this stub avoids broken links while ensuring there is one source of truth.
 
 ## System Architecture
 

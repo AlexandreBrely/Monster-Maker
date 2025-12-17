@@ -162,6 +162,7 @@ class MonsterController
         $bonusActions = $monster['bonus_actions'] ?? [];
         $reactions = $monster['reactions'] ?? [];
         $legendaryActions = $monster['legendary_actions'] ?? [];
+        $monsterXp = $this->getXpForCR((string) ($monster['challenge_rating'] ?? ''));
 
         // Route to correct view based on card size
         // card_size: 1 = Boss (A6 horizontal), 2 = Small (playing card)
@@ -563,6 +564,50 @@ class MonsterController
         }
 
         return compact('skills', 'senses');
+    }
+
+    /**
+     * Map Challenge Rating to XP (5e standard)
+     */
+    private function getXpForCR(string $cr): ?int
+    {
+        $xpByCR = [
+            '0' => 10,
+            '1/8' => 25,
+            '1/4' => 50,
+            '1/2' => 100,
+            '1' => 200,
+            '2' => 450,
+            '3' => 700,
+            '4' => 1100,
+            '5' => 1800,
+            '6' => 2300,
+            '7' => 2900,
+            '8' => 3900,
+            '9' => 5000,
+            '10' => 5900,
+            '11' => 7200,
+            '12' => 8400,
+            '13' => 10000,
+            '14' => 11500,
+            '15' => 13000,
+            '16' => 15000,
+            '17' => 18000,
+            '18' => 20000,
+            '19' => 22000,
+            '20' => 25000,
+            '21' => 33000,
+            '22' => 41000,
+            '23' => 50000,
+            '24' => 62000,
+            '25' => 75000,
+            '26' => 90000,
+            '27' => 105000,
+            '28' => 120000,
+            '29' => 135000,
+            '30' => 155000,
+        ];
+        return $xpByCR[$cr] ?? null;
     }
 
     // Extrait et prépare les données du formulaire

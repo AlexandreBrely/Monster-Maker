@@ -1,19 +1,7 @@
 /* ===== MINI MONSTER CARD STYLES (for index/my-monsters listings) ===== */
 
-/*
- * For beginners:
- * These styles create small preview cards for monster listings.
- * Each card shows a compact statblock (front) and full-body image (back).
- * 
- * Layout:
- * - Front card: 200px wide with monster stats
- * - Back card: 140px wide with portrait image
- * - Cards sit side-by-side using Flexbox
- * 
- * Interactive:
- * - Hover effect: Cards lift up slightly (transform: translateY(-4px))
- * - Clickable: Entire card is wrapped in a link
- */
+/* Small preview cards for monster listings: front compact statblock + back image.
+   Layout: Flexbox two-card layout with hover lift and link wrapping. */
 
 .monster-card-mini {
     display: inline-block;

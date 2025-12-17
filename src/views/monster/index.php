@@ -298,69 +298,15 @@ function toggleLike(event, monsterId) {
     });
 }
 
-// Add monster to collection
-/*
- * FOR BEGINNERS - ASYNC/AWAIT EXPLAINED:
- * 
- * WHAT IS ASYNC?
- * "Async" = asynchronous = "don't wait, keep doing other things"
- * When we send a request to the server, we don't freeze the page waiting.
- * The page stays responsive while the request happens in background.
- * 
- * WHAT IS AWAIT?
- * "await" = "pause here until this finishes, then continue"
- * fetch() returns a Promise (a future value)
- * await waits for the Promise to resolve before moving to next line
- * 
- * WHY ASYNC FUNCTION?
- * Only async functions can use await keyword.
- * 
- * OLD WAY (callbacks):
- * fetch(url).then(response => { ... }).then(data => { ... }).catch(error => { ... })
- * 
- * NEW WAY (async/await):
- * const response = await fetch(url);
- * const data = await response.json();
- * Much cleaner and easier to read!
- */
+// Add monster to collection (AJAX)
 async function addToCollection(event, element) {
-    // Prevent default link behavior (don't navigate away)
     event.preventDefault();
-    
-    // Stop event from bubbling up to parent elements
-    // Without this, clicking dropdown item would also trigger card click
     event.stopPropagation();
     
-    // Get data attributes from the clicked link
-    // HTML: <a data-monster-id="42">...</a>
-    // JavaScript: element.dataset.monsterId gets "42"
     const monsterId = element.dataset.monsterId;
     const collectionId = element.dataset.collectionId;
     const collectionName = element.dataset.collectionName;
     
-    try {
-        /*
-         * FOR BEGINNERS - FETCH API:
-         * fetch() sends HTTP requests to the server
-         * Modern replacement for old XMLHttpRequest
-         * 
-         * PARAMETERS:
-         * 1st: URL to send request to
-         * 2nd: Options object (method, headers, body)
-         * 
-         * METHOD POST:
-         * POST = sending data to create/modify something
-         * GET = retrieving data (no modifications)
-         * 
-         * HEADERS:
-         * Content-Type tells server what format we're sending
-         * 'application/x-www-form-urlencoded' = traditional form data
-         * Alternative: 'application/json' for JSON data
-         * 
-         * BODY:
-         * The actual data we're sending
-         * Format: "key1=value1&key2=value2" (like URL query string)
-         */
         const response = await fetch('index.php?url=collection-add-monster', {
             method: 'POST',
             headers: {
@@ -369,51 +315,19 @@ async function addToCollection(event, element) {
             body: `collection_id=${collectionId}&monster_id=${monsterId}`
         });
         
-        /*
-         * FOR BEGINNERS - PARSING JSON RESPONSE:
-         * Server sends JSON string: '{"success":true,"message":"Added"}'
-         * response.json() parses it into JavaScript object
-         * Result: { success: true, message: "Added" }
-         * Now we can access: result.success, result.message
-         */
         const result = await response.json();
         
         if (result.success) {
-            /*
-             * FOR BEGINNERS - CREATING ELEMENTS WITH JAVASCRIPT:
-             * Instead of hardcoding HTML in file, we create it dynamically
-             * 
-             * STEPS:
-             * 1. createElement('div') creates new <div> element
-             * 2. Set className to apply CSS classes
-             * 3. Set innerHTML to add content inside
-             * 4. appendChild() adds element to page
-             * 
-             * WHY?
-             * - Shows instant feedback to user
-             * - No page reload needed
-             * - Message auto-dismisses after 3 seconds
-             */
+            // Dynamic success alert (auto-dismiss after 3 seconds)
             const successMsg = document.createElement('div');
             successMsg.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
-            successMsg.style.zIndex = '9999'; // Ensure it appears above everything
+            successMsg.style.zIndex = '9999';
             successMsg.innerHTML = `
                 <i class="bi bi-check-circle"></i> Added to ${collectionName}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(successMsg);
             
-            /*
-             * FOR BEGINNERS - SETTIMEOUT:
-             * setTimeout() runs code after a delay
-             * Syntax: setTimeout(function, milliseconds)
-             * 1000 milliseconds = 1 second
-             * 3000 milliseconds = 3 seconds
-             * 
-             * Arrow function () => {} is shorthand for function() {}
-             * 
-             * This auto-removes success message after 3 seconds
-             */
             setTimeout(() => {
                 successMsg.remove();
             }, 3000);
@@ -422,19 +336,6 @@ async function addToCollection(event, element) {
             alert(result.message || 'Failed to add to collection');
         }
     } catch (error) {
-        /*
-         * FOR BEGINNERS - TRY/CATCH ERROR HANDLING:
-         * try { ... } runs code that might fail
-         * catch (error) { ... } runs if code in try block throws error
-         * 
-         * ERRORS CAN HAPPEN:
-         * - Network failure (no internet connection)
-         * - Server error (500 Internal Server Error)
-         * - Invalid JSON response
-         * 
-         * console.error() logs to browser console (F12 developer tools)
-         * Helps developers debug issues
-         */
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
     }
