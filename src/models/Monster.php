@@ -140,7 +140,15 @@ class Monster
      */
     public function getByUser($userId): array
     {
-        $sql = "SELECT * FROM monster WHERE u_id = :userId ORDER BY created_at DESC";
+        $sql = "SELECT m.*, COALESCE(like_counts.count, 0) as like_count 
+                FROM monster m 
+                LEFT JOIN (
+                    SELECT monster_id, COUNT(*) as count 
+                    FROM monster_likes 
+                    GROUP BY monster_id
+                ) like_counts ON m.monster_id = like_counts.monster_id 
+                WHERE m.u_id = :userId 
+                ORDER BY m.created_at DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':userId' => $userId]);
         

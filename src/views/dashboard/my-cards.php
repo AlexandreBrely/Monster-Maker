@@ -24,7 +24,10 @@ require_once ROOT . '/src/views/templates/navbar.php';
                 <div class="row g-3">
                     <?php foreach ($monsters as $monster): ?>
                         <div class="col-12">
-                            <?php require ROOT . '/src/views/templates/monster-card-mini.php'; ?>
+                            <?php 
+                            $isLiked = in_array($monster['monster_id'], $userLikes ?? []);
+                            require ROOT . '/src/views/templates/monster-card-mini.php'; 
+                            ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

@@ -51,10 +51,10 @@ $likeCount = (int)($monster['like_count'] ?? 0);
                         <span class="mini-stat-label">HP</span>
                         <span class="mini-stat-value"><?php echo (int)$monster['hp']; ?></span>
                     </div>
-                    <div class="mini-stat">
+                    <!-- <div class="mini-stat">
                         <span class="mini-stat-label">Speed</span>
                         <span class="mini-stat-value"><?php echo htmlspecialchars($monster['speed']); ?></span>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Abilities -->
@@ -79,69 +79,13 @@ $likeCount = (int)($monster['like_count'] ?? 0);
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Like button and badges -->
-                <div class="mini-footer d-flex justify-content-between align-items-center">
+                <!-- Footer with badge only -->
+                <div class="mini-footer">
                     <?php if ($showOwnerBadge): ?>
                         <span class="badge <?php echo $monster['is_public'] ? 'bg-success' : 'bg-warning text-dark'; ?>">
                             <?php echo $monster['is_public'] ? 'Public' : 'Private'; ?>
                         </span>
-                    <?php else: ?>
-                        <span></span>
                     <?php endif; ?>
-                    
-                    <div class="d-flex gap-2 align-items-center">
-                        <!-- Add-to-collection dropdown: lists user's collections and sends AJAX request on click.
-                             Note: event.stopPropagation() prevents navigating to the monster page. -->
-                        <?php if (isset($_SESSION['user']) && !empty($userCollections ?? [])): ?>
-                            <div class="dropdown" onclick="event.stopPropagation(); event.preventDefault();">
-                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
-                                        type="button" 
-                                        data-bs-toggle="dropdown">
-                                    <i class="bi bi-plus-circle"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <?php 
-                                                /* Data attributes: HTML data-* read via element.dataset to
-                                                    pass monster/collection IDs to addToCollection(event, el). */
-                                    foreach ($userCollections as $collection): 
-                                    ?>
-                                        <li>
-                                            <a class="dropdown-item add-to-collection" 
-                                               href="#"
-                                               data-monster-id="<?php echo $monster['monster_id']; ?>"
-                                               data-collection-id="<?php echo $collection['collection_id']; ?>"
-                                               data-collection-name="<?php echo htmlspecialchars($collection['collection_name']); ?>"
-                                               onclick="addToCollection(event, this)">
-                                                <?php if ($collection['is_default']): ?>
-                                                    <i class="bi bi-printer"></i>
-                                                <?php else: ?>
-                                                    <i class="bi bi-folder"></i>
-                                                <?php endif; ?>
-                                                <?php echo htmlspecialchars($collection['collection_name']); ?>
-                                            </a>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <!-- Like Button -->
-                        <div class="like-section">
-                            <?php if (isset($_SESSION['user'])): ?>
-                                <button class="btn btn-sm btn-outline-danger like-btn" 
-                                        data-monster-id="<?php echo $monster['monster_id']; ?>"
-                                        data-liked="<?php echo $isLiked ? '1' : '0'; ?>"
-                                        onclick="toggleLike(event, <?php echo $monster['monster_id']; ?>)">
-                                    <i class="<?php echo $isLiked ? 'bi bi-heart-fill' : 'bi bi-heart'; ?>"></i>
-                                    <span class="like-count"><?php echo $likeCount; ?></span>
-                                </button>
-                            <?php else: ?>
-                                <span class="text-muted">
-                                    <i class="bi bi-heart"></i> <?php echo $likeCount; ?>
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -159,4 +103,25 @@ $likeCount = (int)($monster['like_count'] ?? 0);
             </div>
         </div>
     </a>
+    
+    <!-- Interactive buttons OUTSIDE the link -->
+    <div class="mini-actions mt-2 d-flex gap-2 align-items-center justify-content-end">
+        <!-- Like Button -->
+        <div class="like-section">
+            <?php if (isset($_SESSION['user'])): ?>
+                <button class="btn btn-sm btn-outline-danger like-btn" 
+                        type="button"
+                        data-monster-id="<?php echo $monster['monster_id']; ?>"
+                        data-liked="<?php echo $isLiked ? '1' : '0'; ?>"
+                        onclick="toggleLike(event, <?php echo $monster['monster_id']; ?>); return false;">
+                    <i class="<?php echo $isLiked ? 'bi bi-heart-fill' : 'bi bi-heart'; ?>"></i>
+                    <span class="like-count"><?php echo $likeCount; ?></span>
+                </button>
+            <?php else: ?>
+                <span class="text-muted">
+                    <i class="bi bi-heart"></i> <?php echo $likeCount; ?>
+                </span>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>

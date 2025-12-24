@@ -87,7 +87,6 @@ class FileUploadService
             $allowedMimes = [
                 'image/jpeg',  // .jpg, .jpeg files
                 'image/png',   // .png files
-                'image/gif',   // .gif files (animated images)
                 'image/webp'   // .webp files (modern, smaller than JPEG/PNG)
             ];
         }
@@ -114,7 +113,6 @@ class FileUploadService
         // === STEP 3: Validate MIME type (security check) ===
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $realMimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
 
         if (!in_array($realMimeType, $allowedMimes)) {
             return [

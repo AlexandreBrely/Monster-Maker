@@ -72,6 +72,9 @@ $routes = [
     'collection-delete' => ['controller' => 'CollectionController', 'action' => 'delete'],
     'collection-add-monster' => ['controller' => 'CollectionController', 'action' => 'addMonster'],
     'collection-remove-monster' => ['controller' => 'CollectionController', 'action' => 'removeMonster'],
+    'collection-share' => ['controller' => 'CollectionController', 'action' => 'shareCollection'],
+    'collection-unshare' => ['controller' => 'CollectionController', 'action' => 'unshareCollection'],
+    'collection-public' => ['controller' => 'CollectionController', 'action' => 'viewPublic'],
     
     // Static pages
     'cgu' => ['controller' => 'PagesController', 'action' => 'cgu'],

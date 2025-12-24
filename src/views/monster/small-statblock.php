@@ -45,7 +45,7 @@ require __DIR__ . '/../templates/action-buttons.php';
 <!-- Card Display: Front (SmallStatblock) and Back (Full Body Image) -->
 <div class="card-display-wrapper">
     <!-- FRONT: Small monster statblock card -->
-    <div class="small-statblock statblock compact">
+    <div class="small-statblock statblock">
         <!-- Header: name, type/alignment, CR/XP -->
         <div class="statblock-header">
             <div>

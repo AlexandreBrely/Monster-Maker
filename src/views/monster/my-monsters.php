@@ -22,6 +22,7 @@
                 <div class="col">
                     <?php 
                     $showOwnerBadge = true;
+                    $isLiked = in_array($monster['monster_id'], $userLikes ?? []);
                     require __DIR__ . '/../templates/monster-card-mini.php'; 
                     ?>
                 </div>

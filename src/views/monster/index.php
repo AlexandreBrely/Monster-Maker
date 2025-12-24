@@ -248,54 +248,133 @@ if (!in_array($searchType, $validSearchTypes)) {
 </main>
 
 <script>
+/**
+ * TOGGLE LIKE FUNCTION - AJAX Like/Unlike Monster
+ * ================================================
+ * 
+ * PURPOSE:
+ * Allows users to like/unlike monsters without page reload using AJAX.
+ * Updates UI immediately for responsive user experience.
+ * 
+ * WORKFLOW:
+ * 1. User clicks heart icon on monster card
+ * 2. Function prevents default link navigation
+ * 3. AJAX request sent to server (MonsterController->toggleLike)
+ * 4. Server adds/removes like from database
+ * 5. Server returns JSON: { success, liked, count }
+ * 6. Function updates UI: icon (filled/empty), count number
+ * 7. Button re-enabled for next interaction
+ * 
+ * PARAMETERS:
+ * @param {Event} event - Click event object (for preventDefault/stopPropagation)
+ * @param {number} monsterId - Database ID of monster to like/unlike
+ * 
+ * UI UPDATES:
+ * - Icon: bi-heart (empty) ↔ bi-heart-fill (filled) - Bootstrap Icons
+ * - Count: Updates to new like count from server
+ * - Button: Disabled during request, re-enabled after
+ * 
+ * ERROR HANDLING:
+ * - Network errors: Show alert with error message
+ * - Server errors: Display error from response
+ * - Invalid response: Catch and log to console
+ * 
+ * SECURITY:
+ * - User must be logged in (checked server-side)
+ * - Monster must be public or owned by user (checked server-side)
+ * - Uses GET request (idempotent operation)
+ * 
+ * DATABASE OPERATIONS (server-side):
+ * - MonsterLike->toggleLike(): Add or remove like record
+ * - MonsterLike->countLikes(): Get updated count
+ * - Uses UNIQUE constraint to prevent duplicate likes
+ * 
+ * RELATED CODE:
+ * - Server: MonsterController->toggleLike() (index.php?url=monster-like)
+ * - Model: MonsterLike->toggleLike(), countLikes()
+ * - Template: monster-card-mini.php (like button HTML)
+ * - CSS: monster-card-mini.css (.like-btn, .like-section)
+ */
 function toggleLike(event, monsterId) {
-    event.preventDefault();
-    event.stopPropagation();
+    // STEP 1: Prevent default link behavior
+    // stopPropagation() prevents click from bubbling to parent card link
+    // preventDefault() stops default link navigation
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
     
-    const btn = event.currentTarget;
-    const icon = btn.querySelector('i');
-    const countSpan = btn.querySelector('.like-count');
+    // STEP 2: Get button and child elements
+    // currentTarget: Element that event listener is attached to (the button)
+    // target: Element that was actually clicked (could be icon or span inside button)
+    const btn = event?.currentTarget || event?.target;
+    if (!btn) return;  // Safety check: exit if no button found
     
-    // Disable button during request
+    // Get icon and count elements inside button
+    const icon = btn.querySelector('i');              // Bootstrap icon (bi-heart or bi-heart-fill)
+    const countSpan = btn.querySelector('.like-count'); // Span showing like count
+    
+    // Safety check: exit if required elements not found
+    if (!icon || !countSpan) return;
+    
+    // STEP 3: Disable button during AJAX request
+    // Prevents double-clicking and multiple simultaneous requests
     btn.disabled = true;
     
+    // STEP 4: Send AJAX request to server
+    // fetch() is modern JavaScript API for HTTP requests
+    // Returns a Promise that resolves when request completes
     fetch('index.php?url=monster-like&id=' + monsterId, {
-        method: 'GET',
-        credentials: 'same-origin'
+        method: 'GET',                    // GET for read-modify-write operation
+        credentials: 'same-origin'        // Include session cookie for authentication
     })
+    // STEP 5: Parse JSON response
     .then(response => {
-        console.log('Response status:', response.status);
+        // Check if HTTP status is success (200-299)
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
+        // Parse JSON body and return as JavaScript object
         return response.json();
     })
+    // STEP 6: Update UI based on server response
     .then(data => {
-        console.log('Like response:', data);
-        
         if (data.success) {
-            // Update icon
+            // SUCCESS: Update icon based on whether user liked or unliked
             if (data.liked) {
-                icon.className = 'bi bi-heart-fill';
-                btn.dataset.liked = '1';
+                // User LIKED: Show filled heart
+                icon.classList.remove('bi-heart');       // Remove empty heart class
+                icon.classList.add('bi-heart-fill');     // Add filled heart class
+                btn.dataset.liked = '1';                 // Update data attribute
             } else {
-                icon.className = 'bi bi-heart';
-                btn.dataset.liked = '0';
+                // User UNLIKED: Show empty heart
+                icon.classList.remove('bi-heart-fill');  // Remove filled heart class
+                icon.classList.add('bi-heart');          // Add empty heart class
+                btn.dataset.liked = '0';                 // Update data attribute
             }
-            // Update count
-            countSpan.textContent = data.count;
+            // Update like count display
+            // parseInt() converts string to number, || 0 provides fallback if NaN
+            const count = parseInt(data.count) || 0;
+            countSpan.textContent = count;
         } else {
+            // FAILURE: Show error message
             console.error('Like failed:', data.error);
             alert(data.error || 'Failed to like/unlike monster');
         }
     })
+    // STEP 7: Handle network or parsing errors
     .catch(error => {
         console.error('Like error:', error);
         alert('An error occurred. Please try again.');
     })
+    // STEP 8: Re-enable button (runs regardless of success/failure)
+    // finally() block always executes after then() or catch()
     .finally(() => {
         btn.disabled = false;
     });
+    
+    // Return false to be extra safe about preventing default behavior
+    return false;
 }
 
 // Add monster to collection (AJAX)
@@ -307,6 +386,7 @@ async function addToCollection(event, element) {
     const collectionId = element.dataset.collectionId;
     const collectionName = element.dataset.collectionName;
     
+    try {
         const response = await fetch('index.php?url=collection-add-monster', {
             method: 'POST',
             headers: {

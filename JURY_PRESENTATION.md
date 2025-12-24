@@ -1,1771 +1,1554 @@
-# Moved: Jury Presentation
+# Monster Maker - Jury Presentation
 
-This file has been consolidated into a single, canonical document:
+## 📸 Code Reference Guide for Screenshots
 
-- See docs/JURY_PRESENTATION.md for the full merged presentation (architecture, collections, layout, exports).
+Throughout this presentation, you'll find links to source code files where you can take screenshots. Here's a quick reference:
 
-Keeping this stub avoids broken links while ensuring there is one source of truth.
+**Key Files for Screenshots:**
 
-## System Architecture
+| Component | File | Use Case |
+|-----------|------|----------|
+| **Router** | [public/index.php](public/index.php) | URL routing, entry point |
+| **Controllers** | [src/controllers/MonsterController.php](src/controllers/MonsterController.php) | Request handling, business logic |
+| **Models** | [src/models/MonsterLike.php](src/models/MonsterLike.php), [src/models/FileUploadService.php](src/models/FileUploadService.php) | Database operations, validation |
+| **Forms** | [src/views/auth/register.php](src/views/auth/register.php) | HTML forms with validation |
+| **JavaScript** | [public/js/monster-form.js](public/js/monster-form.js), [public/js/monster-actions.js](public/js/monster-actions.js) | Complex interactions, AJAX |
+| **CSS Print** | [public/css/boss-card.css](public/css/boss-card.css), [public/css/small-statblock.css](public/css/small-statblock.css) | Printable card layouts |
+| **Templates** | [src/views/templates/monster-card-mini.php](src/views/templates/monster-card-mini.php) | Reusable UI components |
 
-### MVC Pattern Implementation
+**How to Use:** Each section below has a "Source Code:" link. Click it to open the file, then take a screenshot of the relevant code lines.
+
+---
+
+## Part 1: Project Overview
+
+### Name, Goal, and Targeted Users
+
+**Project Name:** Monster Maker
+
+**Goal:** Create a comprehensive D&D 5e monster statblock generator and management platform that allows Dungeon Masters to quickly create, customize, and share creatures for their campaigns.
+
+**Targeted Users:**
+TTRPG Players
+- **Dungeon Masters (DMs):** Primary users who create and manage monsters for their campaigns
+- **Game Masters (GMs):** For D&D 5e compatible systems
+
+
+**Key Features:**
+- Create monsters with full D&D 5e statblocks
+- Generate printable cards (playing card size, A6 boss cards, landscape lair actions)
+- Manage multiple monsters in organized collections
+- Share collections via secure token links
+- Like/favorite monsters and see popularity metrics
+- Full CRUD operations (Create, Read, Update, Delete)
+
+**Live Demo:** http://localhost:8000  
+**Database Admin:** http://localhost:8081
+
+---
+
+## Part 2: Architecture & Technology Stack
+
+### Structure Overview
+
+**Project Type:** Full-stack web application using MVC architecture
+
+**Technology Stack:**
+- **Backend:** PHP 8.4.14 with PDO (prepared statements, parameterized queries)
+- **Database:** MySQL 8.0 with proper foreign keys, constraints, and indexes
+- **Frontend:** HTML5, Bootstrap 5.3, JavaScript (fetch API for AJAX)
+- **Images:** User-uploaded avatars and monster portraits
+- **Containerization:** Docker & Docker Compose (Apache, PHP, MySQL all containerized)
+
+### Design Tools Used
+
+**Database Design:**
+- **Looping.exe:** Visual database design tool used to plan schema relationships
+- Helped visualize: users → monsters, users → collections, collections → monsters
+- Exported SQL from Looping for initial database structure
+
+**UI/UX Design:**
+- **Figma:** Wireframing and design mockups
+- Designed card layouts (playing card 2.5×3.5", A6 boss 5.8×4.1", lair card landscape)
+- Planned responsive layout for desktop/mobile browsing
+
+**Version Control:**
+- **Git:** For tracking code changes and project history
+- **.gitignore:** Excludes Docker volumes, uploads, node_modules
+
+### Directory Structure
 
 ```
-HTTP Request (User submits form or clicks link)
-    ↓
-public/index.php (Router)
-    ├─ Receives: $_GET['url'], $_POST data, $_FILES
-    ├─ Parses URL to determine controller + action
-    └─ Instantiates controller class
-        ↓
-Controller (Business Logic & Request Handler)
-    ├─ Step 1: Validates Request (check session, authorization)
-    ├─ Step 2: Calls Model Methods for business logic
-    ├─ Step 3: Processes Results (validation, transformation)
-    └─ Step 4: Selects appropriate View (or redirects)
-        ↓
-Model (Database Layer & Validation)
-    ├─ Receives data from Controller
-    ├─ Validates data (types, ranges, uniqueness)
-    ├─ Executes Database Queries (PDO prepared statements)
-    ├─ Processes Results (deserialization, transformation)
-    └─ Returns data back to Controller
-        ↓
-Database (MySQL Persistent Storage)
-    ├─ Stores: users, monsters, relationships
-    ├─ Enforces: constraints, foreign keys, indexes
-    └─ Returns: query results
-        ↓
-View (HTML Template)
-    ├─ Receives: processed data from Controller
-    ├─ Receives: error messages (if validation failed)
-    ├─ Renders: HTML with data populated
-    └─ Sends: HTTP Response to Browser
-        ↓
-Browser (User sees result)
-```
-
-### Directory Structure & Purpose
-
-```
-src/
-├── Controllers/
-│   ├── AuthController.php      # Handles: login, register, profile, auth
-│   │   └─ Methods: login(), register(), logout(), editProfile(), etc.
-│   │   └─ **FULLY DOCUMENTED** with security pattern explanations
-│   ├── MonsterController.php   # Handles: all monster operations
-│   │   └─ Methods: create(), store(), show(), index(), edit(), update(), delete()
-│   │   └─ **FULLY DOCUMENTED** with D&D mechanics and routing logic
-│   ├── LairCardController.php  # Handles: lair action card CRUD
-│   │   └─ Methods: create(), store(), show(), myLairCards(), delete()
-│   │   └─ **FULLY DOCUMENTED** with JSON handling explanations
-│   ├── HomeController.php      # Homepage logic
-│   │   └─ **FULLY DOCUMENTED** with PDO patterns and pass-by-reference
-│   ├── Monster.php             # Database operations for monsters
-│   │   └─ Methods: create(), getById(), validate(), search(), etc.
-│   │   └─ **DOCUMENTED** with JSON serialization and dynamic SQL
-│   ├── LairCard.php            # Database operations for lair cards
-│   │   └─ Methods: create(), getById(), getByUser(), update(), delete()
-│   │   └─ **FULLY DOCUMENTED** with JSON array handling
-│   └── Database.php            # PDO connection management (singleton)
-│       └─ **FULLY DOCUMENTED** with connection configuration details
-├── Models/
-│   ├── User.php                # Database operations for users
-│   │   └─ Methods: create(), findByEmail(), validateRegister(), etc.
-│   ├── Monster.php             # Database operations for monsters
-│   │   └─ Methods: create(), getById(), validate(), search(), etc.
-│   └── Database.php            # PDO connection management (singleton)
+Monster_Maker/
+├── config/                 # Configuration files
+├── db/
+│   └── init/
+│       └── database_structure.sql    # Initial schema
+├── docker/
+│   ├── Dockerfile.mysql              # MySQL container config
+│   └── apache/vhost.conf             # Apache virtual host
+├── docker-compose.yml      # Services: Apache, PHP, MySQL
+├── Dockerfile              # PHP/Apache container config
 │
-└── Views/
-    ├── auth/                   # User authentication forms
-    │   ├── register.php        # Boss monster creation form
-    │   │   └─ **FULLY DOCUMENTED** with D&D ability scores
-    │   ├── create_small.php    # Small card creation form
-    │   ├── show.php            # Display monster details
-    │   │   └─ **FULLY DOCUMENTED** with legendary actions
-    │   ├── index.php           # List all public monsters (mini cards)
-    │   ├── my-monsters.php     # User's monster collection
-    │   ├── small-statblock.php # Playing card print view (2.5×3.5in)
-    │   │   └─ **FULLY DOCUMENTED** with XP calculations
-    │   ├── boss-card.php       # A6 horizontal boss card (5.8×4.1in)
-    │   │   └─ **FULLY DOCUMENTED** with two-column layout
-    │   └── edit.php            # Edit monster form
-    │
-    ├── lair/                   # Lair action card views
-    │   ├── create.php          # Lair card creation form
-    │   │   └─ **FULLY DOCUMENTED** with dynamic JavaScript
-    │   ├── show.php            # Landscape lair card display (5×3.5in)
-    │   │   └─ **FULLY DOCUMENTED**
-    │   └── my-lair-cards.php   # User's lair card collection
-    │
-    ├── templates/              # Reusable components
-    │   ├── header.php          # HTML head, styles, CDN loading
-    │   │   └─ **FULLY DOCUMENTED** with Bootstrap/Font Awesome
-    │   ├── navbar.php          # Navigation bar with auth state
-    ├─ Executes controller method
-│   └─ **FULLY DOCUMENTED** with route grouping
+├── src/                    # Application code (MVC)
+│   ├── controllers/        # Request handlers
+│   │   ├── AuthController.php
+│   │   ├── MonsterController.php
+│   │   ├── CollectionController.php
+│   │   ├── LairCardController.php
+│   │   ├── HomeController.php
+│   │   └── PagesController.php
+│   │
+│   ├── models/             # Database layer
+│   │   ├── Database.php
+│   │   ├── User.php
+│   │   ├── Monster.php
+│   │   ├── Collection.php
+│   │   ├── LairCard.php
+│   │   ├── MonsterLike.php
+│   │   └── FileUploadService.php
+│   │
+│   └── views/              # HTML templates
+│       ├── auth/           # Login, register, profile
+│       ├── monster/        # Monster CRUD and display
+│       ├── collection/     # Collection CRUD and sharing
+│       ├── lair/           # Lair card CRUD
+│       ├── dashboard/      # User dashboard
+│       ├── templates/      # Reusable components (header, footer, navbar)
+│       └── pages/          # Error pages
 │
-├── uploads/                    # User-uploaded files
-│   ├── avatars/               # User profile pictures
-│   ├── monsters/              # Monster images (portrait, full-body)
-│   └── lair_cards/            # Lair card landscape images
+├── public/                 # Web-accessible files
+│   ├── index.php           # Router (entry point)
+│   ├── api/                # AJAX endpoints
+│   │   ├── add-to-collection.php
+│   │   ├── create-collection-and-add.php
+│   │   ├── get-collections.php
+│   │   └── monster-like.php
+│   │
+│   ├── css/                # Stylesheets
+│   │   ├── style.css
+│   │   ├── monster-form.css
+│   │   ├── monster-card-mini.css
+│   │   ├── boss-card.css   # A6 horizontal layout
+│   │   ├── small-statblock.css
+│   │   └── lair-card.css
+│   │
+│   ├── js/                 # Client-side JavaScript
+│   │   ├── monster-form.js
+│   │   ├── monster-actions.js
+│   │   └── collection-manager.js
+│   │
+│   ├── assets/images/svg/  # Icons and graphics
+│   │
+│   └── uploads/            # User-uploaded files
+│       ├── avatars/        # Profile pictures
+│       ├── monsters/       # Monster images
+│       └── lair_cards/     # Lair card images
 │
-├── css/                        # Stylesheets
-│   ├── style.css              # Global styles
-│   ├── monster-form.css       # Color-coded form sections
-│   ├── small-statblock.css    # Playing card print layout
-│   ├── boss-card.css          # A6 horizontal boss card
-│   │   └─ **FULLY DOCUMENTED** with CSS Grid explanations
-│   ├── lair-card.css          # Landscape lair card
-│   │   └─ **FULLY DOCUMENTED** with print media queries
-│   └── monster-card-mini.css  # Mini card hover effects
-│       └─ **FULLY DOCUMENTED**
+├── docs/                   # Documentation
+│   └── AJAX_EXPLAINED.md
 │
-└── js/                         # Client-side JavaScript
-    └── monster-form.js         # Dynamic form behavior
-        └─ **FULLY DOCUMENTED** with JSDoc comments
-        ├─ D&D modifier calculations
-        ├─ Dynamic action/trait/reaction builders
-        ├─ Event listener management
-        └─ DOM manipulation with guard clauses
-    │   ├── header.php          # HTML head, styles
-    │   ├── navbar.php          # Navigation bar
-    │   └── footer.php          # Footer
-    │
-    └── pages/                  # Static content pages
-        └── error-404.php       # 404 error page
-
-public/
-├── index.php                   # Entry point (Router)
-│   ├─ Receives all requests
-│   ├─ Parses URL
-│   ├─ Maps to controller/action
-│   └─ Executes controller method
-│
-├── uploads/                    # User-uploaded files
-│   ├── avatars/               # User profile pictures
-│   └── monsters/              # Monster images
-│
-├── css/                        # Stylesheets (Bootstrap, custom)
-└── js/                         # JavaScript (if needed)
+└── README.md               # Project documentation
 ```
 
 ---
 
-## Core Components Explained - Step by Step
+## Part 3: Router - The Entry Point
 
-### 1. Router (public/index.php) - The Gateway
+### How Requests Flow Through the Application
 
-**Purpose:** Single entry point for ALL requests. Maps URLs to the right controller.
+Every HTTP request to the application goes through **public/index.php**, the router.
 
-**Step-by-step flow:**
+**Request Flow:**
+```
+Browser: GET http://localhost:8000?url=monsters
+    ↓
+Router (public/index.php)
+    ├─ Parses URL: url='monsters'
+    ├─ Looks up in routes: 'monsters' → MonsterController::index
+    ├─ Creates: new MonsterController()
+    └─ Calls: $controller->index()
+        ↓
+Controller (MonsterController)
+    ├─ Validates authorization
+    ├─ Calls model methods
+    └─ Renders view with data
+        ↓
+Model (Monster)
+    ├─ Queries database
+    └─ Returns results
+        ↓
+View
+    ├─ Receives data
+    └─ Renders HTML
+        ↓
+Browser: Displays page
+```
+
+### Router Implementation
+
+**Source Code:** [public/index.php](public/index.php)
 
 ```php
 <?php
-// STEP 1: Initialize application
-define('ROOT', dirname(__DIR__));  // Store root path: /var/www (in Docker)
-define('BASE_URL', '/');           // Base URL for links
-session_start();                   // Start PHP session (for $_SESSION)
+// public/index.php - Single entry point for ALL requests
 
-// STEP 2: Setup autoloader (auto-includes classes)
-// When we use: new User(), PHP automatically requires src/Models/User.php
+// STEP 1: Initialize
+define('ROOT', dirname(__DIR__));  // Project root path
+session_start();                   // Enable sessions
+
+// STEP 2: Register autoloader (auto-load classes by namespace)
 spl_autoload_register(function ($class) {
-    // Convert: App\Models\User → src/Models/User.php
     $file = ROOT . '/src/' . str_replace('\\', '/', $class) . '.php';
     if (file_exists($file)) {
         require_once $file;
     }
 });
 
-// STEP 3: Parse the URL
-// Input: $_GET['url'] = 'create' or 'monster' or 'login'
-$url = isset($_GET['url']) ? $_GET['url'] : 'home';
-$url = filter_var($url, FILTER_SANITIZE_URL);  // Remove dangerous characters
-$urlParts = explode('/', $url);                 // Split by slash
+// STEP 3: Parse URL
+$url = $_GET['url'] ?? 'home';
+$url = filter_var($url, FILTER_SANITIZE_URL);
+$urlParts = explode('/', $url);
 
-// STEP 4: Define all available routes
-// Format: 'url-name' => ['controller' => 'ControllerClass', 'action' => 'methodName']
+// STEP 4: Define routes
 $routes = [
-    'home'     => ['controller' => 'HomeController', 'action' => 'index'],
-    'login'    => ['controller' => 'AuthController', 'action' => 'login'],
-    'register' => ['controller' => 'AuthController', 'action' => 'register'],
-    'logout'   => ['controller' => 'AuthController', 'action' => 'logout'],
-    'create'   => ['controller' => 'MonsterController', 'action' => 'create'],
-    'monsters' => ['controller' => 'MonsterController', 'action' => 'index'],
+    'home'              => ['controller' => 'HomeController', 'action' => 'index'],
+    'login'             => ['controller' => 'AuthController', 'action' => 'login'],
+    'register'          => ['controller' => 'AuthController', 'action' => 'register'],
+    'logout'            => ['controller' => 'AuthController', 'action' => 'logout'],
+    'monsters'          => ['controller' => 'MonsterController', 'action' => 'index'],
+    'monster-create'    => ['controller' => 'MonsterController', 'action' => 'create'],
+    'monster-show'      => ['controller' => 'MonsterController', 'action' => 'show'],
+    'monster-edit'      => ['controller' => 'MonsterController', 'action' => 'edit'],
+    'collections'       => ['controller' => 'CollectionController', 'action' => 'index'],
+    'collection-view'   => ['controller' => 'CollectionController', 'action' => 'view'],
 ];
 
-// STEP 5: Find the route
+// STEP 5: Find and execute route
 if (isset($routes[$urlParts[0]])) {
-    // Route found in our map
-    $controllerName = $routes[$urlParts[0]]['controller'];  // e.g. 'AuthController'
-    $action = $routes[$urlParts[0]]['action'];              // e.g. 'login'
+    $controllerName = $routes[$urlParts[0]]['controller'];
+    $action = $routes[$urlParts[0]]['action'];
 } else {
-    // Route not found -> show 404
     $controllerName = 'PagesController';
     $action = 'error404';
 }
 
-// STEP 6: Load and execute controller
+// STEP 6: Load and execute
 $controllerFile = ROOT . '/src/controllers/' . $controllerName . '.php';
-
 if (file_exists($controllerFile)) {
     require_once $controllerFile;
-    
-    // Create controller instance
-    // Example: $controller = new AuthController();
     $controller = new $controllerName();
-    
-    // Call the action method
-    // Example: $controller->login();
     if (method_exists($controller, $action)) {
-        $controller->$action();  // Dynamic method call
+        $controller->$action();
     } else {
-        // Method doesn't exist in controller
-        $controller = new PagesController();
-        $controller->error404();
+        (new PagesController())->error404();
     }
 } else {
-    // Controller file doesn't exist
-    echo "Controller not found";
-}
-?>
-```
-
-**Key Concepts:**
-
-1. **Single Responsibility:** Router ONLY handles URL → Controller mapping
-2. **Autoloading:** Classes automatically loaded by namespace (no manual `require`)
-3. **Dynamic Execution:** Method names stored in config and called dynamically
-4. **Error Handling:** If route/controller/method missing → show 404
-
----
-
-### 2. Controllers - The Orchestrators
-
-**Purpose:** Handle HTTP requests, validate authorization, call models, select views.
-
-#### Controller Pattern: GET vs POST
-
-```php
-namespace App\Controllers;
-
-use App\Models\User;
-
-class AuthController
-{
-    // STEP 1: Initialize model in constructor
-    // This way, we have $this->userModel available in all methods
-    private $userModel;
-
-    public function __construct()
-    {
-        $this->userModel = new User();  // Create once, use many times
-    }
-
-    // STEP 2: Authorization helper method
-    // Called at start of any method that requires login
-    private function ensureAuthenticated()
-    {
-        if (!isset($_SESSION['user'])) {
-            // User not logged in -> redirect to login
-            header('Location: index.php?url=login');
-            exit;  // Stop execution immediately
-        }
-    }
-
-    // =========== LOGIN FLOW ===========
-    
-    /**
-     * GET /login
-     * STEP 1: Display the login form (no data processing)
-     * STEP 2: Wait for user to submit
-     */
-    public function login()
-    {
-        // Already logged in? Redirect to home
-        if (isset($_SESSION['user'])) {
-            header('Location: index.php?url=home');
-            exit;
-        }
-
-        // Handle POST request
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // STEP 1: Extract form data from POST
-            $email = $_POST['email'] ?? '';       // Get email or empty string
-            $password = $_POST['password'] ?? ''; // Get password or empty string
-
-            // STEP 2: Find user in database
-            // Returns: ['u_id' => 1, 'u_email' => '...', 'u_password' => '...'] OR false
-            $user = $this->userModel->findByEmail($email);
-
-            // STEP 3: Verify password
-            // password_verify() safely compares:
-            // - $password: plain text from user
-            // - $user['u_password']: hashed password from database
-            if (!$user || !password_verify($password, $user['u_password'])) {
-                // Wrong email or password
-                $errors['login'] = "Incorrect credentials.";
-                
-                // Re-show login form with error
-                require_once __DIR__ . '/../views/auth/login.php';
-                return;  // Stop here, don't log in
-            }
-
-            // STEP 4: Password correct -> create session
-            // $_SESSION persists across page loads for this user
-            $_SESSION['user'] = [
-                'u_id'       => $user['u_id'],           // User ID for future queries
-                'u_username' => $user['u_username'],     // Display in navbar
-                'u_email'    => $user['u_email'],        // Contact info
-                'u_avatar'   => $user['u_avatar'] ?? null  // Profile picture
-            ];
-
-            // STEP 5: Redirect to home (successful login)
-            // Redirect = tell browser to go to new URL
-            header('Location: index.php?url=home');
-            exit;  // Stop execution
-        }
-
-        // STEP 6: Show login form (if not POST)
-        require_once __DIR__ . '/../views/auth/login.php';
-    }
-
-    // =========== REGISTRATION FLOW ===========
-
-    public function register()
-    {
-        // Already logged in? Redirect
-        if (isset($_SESSION['user'])) {
-            header('Location: index.php?url=home');
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // STEP 1: Extract and organize form data
-            $data = [
-                'username'         => $_POST['username'] ?? '',
-                'email'            => $_POST['email'] ?? '',
-                'password'         => $_POST['password'] ?? '',
-                'confirm_password' => $_POST['confirm_password'] ?? ''
-            ];
-
-            // STEP 2: Validate using model
-            // Model checks:
-            // - Username not empty + min 3 chars + not already used
-            // - Email not empty + valid format + not already used
-            // - Password not empty + min 8 chars
-            // - Passwords match
-            $errors = $this->userModel->validateRegister($data);
-
-            // STEP 3: If no errors, create account
-            if (empty($errors)) {
-                // Hash password before storing (bcrypt algorithm)
-                // password_hash() = one-way encryption, can't be reversed
-                // PASSWORD_DEFAULT = bcrypt (currently best practice)
-                $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-
-                // Create user in database
-                // Parameters: username, email, hashed_password
-                if ($this->userModel->create($data['username'], $data['email'], $hashedPassword)) {
-                    // Success! Redirect to login
-                    header('Location: index.php?url=login');
-                    exit;
-                } else {
-                    // Database error
-                    $errors['server'] = "Database error. Try again later.";
-                }
-            }
-
-            // STEP 4: Keep old values for form repopulation
-            // If user made mistake, show their previous input (except password)
-            $old = [
-                'username' => $data['username'],
-                'email'    => $data['email']
-            ];
-        }
-
-        // Show registration form (with errors if any)
-        require_once __DIR__ . '/../views/auth/register.php';
-    }
-
-    // =========== PROFILE EDITING ===========
-
-    public function editProfile()
-    {
-        // STEP 1: Ensure user is logged in
-        // If not: redirects to login, doesn't continue
-        $this->ensureAuthenticated();
-
-        // STEP 2: Get logged-in user's ID from session
-        $userId = $_SESSION['user']['u_id'];
-        
-        // STEP 3: Load user's current data from database
-        $user = $this->userModel->findById($userId);
-
-        // STEP 4: If no user found (shouldn't happen, but safety check)
-        if (!$user) {
-            // Show 404 page
-            require_once __DIR__ . '/../views/pages/error-404.php';
-            return;
-        }
-
-        // Handle POST (form submission)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // STEP 1: Extract form data
-            $data = [
-                'username' => $_POST['username'] ?? '',
-                'email'    => $_POST['email'] ?? ''
-            ];
-
-            // STEP 2: Validate changes
-            // Note: allows keeping same username/email, or changing to new ones
-            $errors = $this->userModel->validateProfileUpdate($data, $userId);
-
-            // STEP 3: Handle avatar upload if provided
-            $avatarFile = null;
-            if (!empty($_FILES['avatar']['name'])) {
-                // Upload file with validation
-                // Returns: ['success' => true/false, 'filename' => '...', 'error' => '...']
-                $uploadResult = $this->uploadAvatar($_FILES['avatar']);
-                
-                if ($uploadResult['success']) {
-                    // File saved successfully
-                    $avatarFile = $uploadResult['filename'];
-                    $data['avatar'] = $avatarFile;
-                } else {
-                    // Upload failed, add error
-                    $errors['avatar'] = $uploadResult['error'];
-                }
-            }
-
-            // STEP 4: If no errors, update database
-            if (empty($errors)) {
-                if ($this->userModel->updateProfile($userId, $data)) {
-                    // Success! Update session with new values
-                    if (!empty($data['username'])) {
-                        $_SESSION['user']['u_username'] = $data['username'];
-                    }
-                    if (!empty($data['email'])) {
-                        $_SESSION['user']['u_email'] = $data['email'];
-                    }
-                    if (!empty($data['avatar'])) {
-                        $_SESSION['user']['u_avatar'] = $data['avatar'];
-                    }
-
-                    // Redirect to profile page (refresh)
-                    header('Location: index.php?url=edit-profile');
-                    exit;
-                } else {
-                    // Database error
-                    $errors['server'] = 'Profile update failed';
-                }
-            }
-
-            // Keep old values for form repopulation
-            extract(['errors' => $errors, 'old' => $data, 'user' => $user]);
-        }
-
-        // Show profile edit form
-        require_once __DIR__ . '/../views/auth/edit-profile.php';
-    }
-
-    // =========== FILE UPLOAD HELPER ===========
-
-    /**
-     * Upload avatar with security checks
-     * 
-     * Security checks performed:
-     * 1. File error check
-     * 2. File size limit (5MB max)
-     * 3. MIME type validation (real type, not filename)
-     * 4. Unique filename (prevents overwrites and directory traversal)
-     */
-    private function uploadAvatar($file): array
-    {
-        // Constants for file upload
-        $maxSize = 5 * 1024 * 1024;  // 5 MB in bytes
-        $allowedMime = [
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/gif'  => 'gif',
-            'image/webp' => 'webp'
-        ];
-
-        // STEP 1: Check for upload errors
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return [
-                'success' => false,
-                'error' => 'File upload error.'
-            ];
-        }
-
-        // STEP 2: Check file size
-        if ($file['size'] > $maxSize) {
-            return [
-                'success' => false,
-                'error' => 'File too large (max 5 MB).'
-            ];
-        }
-
-        // STEP 3: Validate MIME type (real type, not filename)
-        // finfo = "file information" - reads actual file content
-        // Prevents: uploading .php file renamed as .jpg
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);  // Real MIME type
-        finfo_close($finfo);
-
-        // Check if MIME is in whitelist
-        if (!array_key_exists($mime, $allowedMime)) {
-            return [
-                'success' => false,
-                'error' => 'File type not allowed.'
-            ];
-        }
-
-        // STEP 4: Generate unique, safe filename
-        $extension = $allowedMime[$mime];           // Extension from MIME type
-        $originalName = pathinfo($file['name'], PATHINFO_FILENAME);  // Filename without ext
-        $sanitized = preg_replace('/[^a-zA-Z0-9_-]/', '_', $originalName);  // Remove special chars
-        $truncated = substr($sanitized, 0, 20);    // Limit length
-        $uniqueId = bin2hex(random_bytes(8));      // 16 random hex characters
-        $uniqueName = $uniqueId . '_' . $truncated . '.' . $extension;
-
-        // STEP 5: Create upload directory if doesn't exist
-        $uploadPath = __DIR__ . '/../../public/uploads/avatars/';
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);  // 0755 = readable by all, writable by owner
-        }
-
-        $destination = $uploadPath . $uniqueName;
-
-        // STEP 6: Move file from temp location to final location
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            return [
-                'success' => false,
-                'error' => 'Failed to save image.'
-            ];
-        }
-
-        // Success!
-        return [
-            'success' => true,
-            'filename' => $uniqueName
-        ];
-    }
-
-    // =========== LOGOUT ===========
-
-    public function logout()
-    {
-        // STEP 1: Destroy session
-        // Removes all $_SESSION data
-        session_unset();    // Clear all session variables
-        session_destroy();  // Destroy session file
-
-        // STEP 2: Redirect to home
-        header('Location: index.php?url=home');
-        exit;
-    }
+    echo "Controller not found: $controllerName";
 }
 ?>
 ```
 
 ---
 
-### 3. Models - Database & Validation Layer
+## Part 4: Database Layer
 
-**Purpose:** Handle all database operations and business logic validation.
+### Database Schema
 
-#### User Model - Step by Step
+The application uses MySQL 8.0 with 6 main tables:
 
-```php
-namespace App\Models;
-
-use App\Models\Database;
-use PDO;
-
-class User
-{
-    // Database connection object
-    // PDO = PHP Data Objects (database abstraction layer)
-    private $db;
-
-    /**
-     * Constructor: Initialize database connection
-     * Called when: new User() is instantiated
-     */
-    public function __construct()
-    {
-        // Get database connection from Database class (singleton pattern)
-        $database = new Database();
-        $this->db = $database->getConnection();  // Gets PDO object
-    }
-
-    // =========== CREATE USER ===========
-
-    /**
-     * Create new user account
-     * 
-     * @param string $username - Already validated and trimmed by controller
-     * @param string $email - Already validated by controller
-     * @param string $password - Already hashed by controller (password_hash())
-     * @return bool - true if successful
-     * 
-     * SECURITY: Prepared statement prevents SQL injection
-     */
-    public function create($username, $email, $password)
-    {
-        try {
-            // STEP 1: Write SQL query with PLACEHOLDERS (not actual values)
-            // :param format = named placeholder
-            $sql = "INSERT INTO users (u_username, u_email, u_password)
-                    VALUES (:username, :email, :password)";
-
-            // STEP 2: Prepare statement (compile SQL, separate from data)
-            // prepare() = tell database: "I have a query with placeholders"
-            $stmt = $this->db->prepare($sql);
-
-            // STEP 3: Execute with actual data
-            // Database treats data as DATA, not executable code
-            // Prevents SQL injection attacks
-            $stmt->execute([
-                ':username' => $username,  // Replace :username placeholder
-                ':email'    => $email,     // Replace :email placeholder
-                ':password' => $password   // Replace :password placeholder (hashed)
-            ]);
-
-            // STEP 4: If we reach here, insert succeeded
-            return true;
-
-        } catch (PDOException $e) {
-            // Database error (e.g., duplicate username/email)
-            // Don't expose error details to user
-            return false;
-        }
-    }
-
-    // =========== FIND USER ===========
-
-    /**
-     * Find user by email
-     * Used during: login process
-     * 
-     * @param string $email - Email to search for
-     * @return array|false - User data if found, false if not
-     */
-    public function findByEmail($email)
-    {
-        // STEP 1: SQL query with placeholder
-        $sql = "SELECT * FROM users WHERE u_email = :email";
-
-        // STEP 2: Prepare and execute with parameter
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':email' => $email]);
-
-        // STEP 3: Fetch result as associative array
-        // PDO::FETCH_ASSOC = return as array with column names as keys
-        // ['u_id' => 1, 'u_email' => 'user@example.com', 'u_password' => '...']
-        return $stmt->fetch(PDO::FETCH_ASSOC);  // Returns array or false
-    }
-
-    /**
-     * Find user by ID
-     * Used for: profile loading, authorization checks
-     */
-    public function findById($id)
-    {
-        $sql = "SELECT * FROM users WHERE u_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // =========== VALIDATION ===========
-
-    /**
-     * Validate registration form data
-     * Called from: AuthController::register()
-     * 
-     * @param array $data - Form data to validate
-     * @return array - Error messages (empty if valid)
-     * 
-     * VALIDATION RULES:
-     * - Username: not empty, min 3 chars, not already used
-     * - Email: not empty, valid format, not already used
-     * - Password: not empty, min 8 chars
-     * - Passwords must match
-     */
-    public function validateRegister(array $data): array
-    {
-        $errors = [];  // Will store error messages
-
-        // ---- USERNAME VALIDATION ----
-        $username = trim($data['username'] ?? '');  // Remove whitespace
-        
-        if ($username === '') {
-            $errors['username'] = 'Username required';
-        } elseif (strlen($username) < 3) {
-            $errors['username'] = 'Username too short (min 3 chars)';
-        } elseif (self::checkUsername($username)) {
-            // Static method: check if username already exists
-            // self:: = call static method on this class
-            $errors['username'] = 'Username already taken';
-        }
-
-        // ---- EMAIL VALIDATION ----
-        $email = trim($data['email'] ?? '');
-
-        if ($email === '') {
-            $errors['email'] = 'Email required';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            // PHP function: validate email format
-            // Returns: true if valid, false if not
-            $errors['email'] = 'Invalid email format';
-        } elseif (self::checkMail($email)) {
-            // Static method: check if email already exists
-            $errors['email'] = 'Email already used';
-        }
-
-        // ---- PASSWORD VALIDATION ----
-        $password = $data['password'] ?? '';
-
-        if ($password === '') {
-            $errors['password'] = 'Password required';
-        } elseif (strlen($password) < 8) {
-            $errors['password'] = 'Password too short (min 8 chars)';
-        }
-
-        // ---- PASSWORD CONFIRMATION ----
-        $confirm = $data['confirm_password'] ?? '';
-
-        if ($confirm === '') {
-            $errors['confirm_password'] = 'Please confirm password';
-        } elseif ($confirm !== $password) {
-            $errors['confirm_password'] = 'Passwords do not match';
-        }
-
-        // Return empty array = all valid, OR non-empty = errors found
-        return $errors;
-    }
-
-    // =========== STATIC UNIQUENESS CHECKS ===========
-
-    /**
-     * Check if email already exists in database
-     * Static = can be called without creating object: User::checkMail('test@example.com')
-     * 
-     * @param string $email - Email to check
-     * @return bool - true if exists, false if doesn't
-     * 
-     * WHY STATIC?
-     * - Can be called during registration (before user object created)
-     * - Doesn't need instance variables
-     * - Reusable in multiple places
-     */
-    public static function checkMail(string $email): bool
-    {
-        try {
-            // STEP 1: Create temporary database connection
-            $db = (new Database())->getConnection();
-
-            // STEP 2: Query database
-            // SELECT 1 = return just the number 1 (not full row data)
-            // Reason: we only need to know IF it exists, not what it contains
-            $sql = 'SELECT 1 FROM users WHERE u_email = :email LIMIT 1';
-            $stmt = $db->prepare($sql);
-            $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-            $stmt->execute();
-
-            // STEP 3: Check if any result found
-            // fetchColumn() = get first column of first row, or false if no rows
-            // We asked for SELECT 1, so if found: returns 1, if not found: returns false
-            $result = $stmt->fetchColumn();
-
-            // Return true if found, false if not
-            return $result !== false;
-
-        } catch (PDOException $e) {
-            // Database error
-            return false;  // Return false on error (safer than true)
-        }
-    }
-
-    /**
-     * Check if username already exists in database
-     * Same pattern as checkMail()
-     */
-    public static function checkUsername(string $username): bool
-    {
-        try {
-            $db = (new Database())->getConnection();
-            $sql = 'SELECT 1 FROM users WHERE u_username = :username LIMIT 1';
-            $stmt = $db->prepare($sql);
-            $stmt->bindValue(':username', $username, PDO::PARAM_STR);
-            $stmt->execute();
-            return $stmt->fetchColumn() !== false;
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
-
-    // =========== UPDATE PROFILE ===========
-
-    /**
-     * Update user profile (username, email, avatar)
-     * Called from: AuthController::editProfile()
-     * 
-     * @param int $id - User ID to update
-     * @param array $data - Fields to update (only non-empty ones)
-     * @return bool - true if successful
-     */
-    public function updateProfile($id, array $data)
-    {
-        try {
-            // STEP 1: Build dynamic SQL only for provided fields
-            // Reason: user might only update avatar, not username
-            $updates = [];
-            $params = [':id' => $id];
-
-            // Add username to update if provided
-            if (!empty($data['username'])) {
-                $updates[] = 'u_username = :username';
-                $params[':username'] = $data['username'];
-            }
-
-            // Add email to update if provided
-            if (!empty($data['email'])) {
-                $updates[] = 'u_email = :email';
-                $params[':email'] = $data['email'];
-            }
-
-            // Add avatar to update if provided
-            if (!empty($data['avatar'])) {
-                $updates[] = 'u_avatar = :avatar';
-                $params[':avatar'] = $data['avatar'];
-            }
-
-            // STEP 2: If nothing to update, return success
-            if (empty($updates)) {
-                return true;  // No error, nothing changed
-            }
-
-            // STEP 3: Build SQL from dynamic pieces
-            // implode(', ', ['a = :a', 'b = :b']) = 'a = :a, b = :b'
-            $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE u_id = :id";
-
-            // STEP 4: Execute update
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute($params);  // Returns true/false
-
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
-}
-?>
-```
-
-#### Monster Model - Complex Operations
-
-```php
-class Monster
-{
-    private $db;
-
-    public function __construct()
-    {
-        $database = new Database();
-        $this->db = $database->getConnection();
-    }
-
-    // =========== CREATE MONSTER ===========
-
-    /**
-     * Insert new monster into database
-     * Called from: MonsterController::store()
-     * 
-     * @param array $data - Monster data with 37+ fields
-     * @param int $userId - Owner of this monster
-     * @return string|false - Monster ID if successful, false if error
-     * 
-     * CHALLENGE: How to store complex data (actions array) in database?
-     * SOLUTION: JSON serialization
-     * - Before insert: json_encode($data['actions']) = JSON string
-     * - After retrieve: json_decode($jsonString) = array
-     */
-    public function create(array $data, $userId)
-    {
-        try {
-            // STEP 1: Prepare SQL with all 37+ columns and placeholders
-            $sql = "INSERT INTO monster (
-                name, size, type, alignment, 
-                ac, hp, hit_dice, ac_notes, speed,
-                strength, dexterity, constitution, intelligence, wisdom, charisma,
-                proficiency_bonus, saving_throws, skills, senses, languages,
-                challenge_rating, damage_immunities, damage_resistances, 
-                damage_vulnerabilities, condition_immunities,
-                traits, actions, bonus_actions, reactions, legendary_actions,
-                is_legendary, legendary_resistance, legendary_resistance_lair, lair_actions,
-                image_portrait, image_fullbody, card_size, is_public, u_id,
-                created_at, updated_at
-            ) VALUES (
-                :name, :size, :type, :alignment,
-                :ac, :hp, :hit_dice, :ac_notes, :speed,
-                :strength, :dexterity, :constitution, :intelligence, :wisdom, :charisma,
-                :proficiency_bonus, :saving_throws, :skills, :senses, :languages,
-                :challenge_rating, :damage_immunities, :damage_resistances,
-                :damage_vulnerabilities, :condition_immunities,
-                :traits, :actions, :bonus_actions, :reactions, :legendary_actions,
-                :is_legendary, :legendary_resistance, :legendary_resistance_lair, :lair_actions,
-                :image_portrait, :image_fullbody, :card_size, :is_public, :userId,
-                NOW(), NOW()
-            )";
-
-            // STEP 2: Prepare statement
-            $stmt = $this->db->prepare($sql);
-
-            // STEP 3: Execute with parameters
-            // KEY: Actions/reactions stored as JSON
-            // json_encode() = convert PHP array to JSON string
-            // Database stores JSON, retrieves JSON, we decode it back to array
-            $stmt->execute([
-                ':name'           => $data['name'],
-                ':size'           => $data['size'] ?? '',
-                ':type'           => $data['type'] ?? '',
-                ':alignment'      => $data['alignment'] ?? '',
-                ':ac'             => $data['ac'] ?? 10,
-                ':hp'             => $data['hp'] ?? 1,
-                ':hit_dice'       => $data['hit_dice'] ?? '',
-                ':ac_notes'       => $data['ac_notes'] ?? '',
-                ':speed'          => $data['speed'] ?? '',
-                ':strength'       => $data['strength'] ?? 10,
-                ':dexterity'      => $data['dexterity'] ?? 10,
-                ':constitution'   => $data['constitution'] ?? 10,
-                ':intelligence'   => $data['intelligence'] ?? 10,
-                ':wisdom'         => $data['wisdom'] ?? 10,
-                ':charisma'       => $data['charisma'] ?? 10,
-                ':proficiency_bonus' => $data['proficiency_bonus'] ?? 0,
-                ':saving_throws'  => $data['saving_throws'] ?? '',
-                ':skills'         => $data['skills'] ?? '',
-                ':senses'         => $data['senses'] ?? '',
-                ':languages'      => $data['languages'] ?? '',
-                ':challenge_rating' => $data['challenge_rating'] ?? '0',
-                ':damage_immunities' => $data['damage_immunities'] ?? '',
-                ':damage_resistances' => $data['damage_resistances'] ?? '',
-                ':damage_vulnerabilities' => $data['damage_vulnerabilities'] ?? '',
-                ':condition_immunities' => $data['condition_immunities'] ?? '',
-                ':traits'         => $data['traits'] ?? '',
-                ':actions'        => json_encode($data['actions'] ?? []),           // ← JSON!
-                ':bonus_actions'  => $data['bonus_actions'] ?? '',
-                ':reactions'      => json_encode($data['reactions'] ?? []),         // ← JSON!
-                ':legendary_actions' => json_encode($data['legendary_actions'] ?? []),  // ← JSON!
-                ':is_legendary'   => $data['is_legendary'] ?? 0,
-                ':legendary_resistance' => $data['legendary_resistance'] ?? '',
-                ':legendary_resistance_lair' => $data['legendary_resistance_lair'] ?? '',
-                ':lair_actions'   => $data['lair_actions'] ?? '',
-                ':image_portrait' => $data['image_portrait'] ?? null,
-                ':image_fullbody' => $data['image_fullbody'] ?? null,
-                ':card_size'      => $data['card_size'] ?? 1,
-                ':is_public'      => $data['is_public'] ?? 0,
-                ':userId'         => $userId
-            ]);
-
-            // STEP 4: Return the auto-increment ID of inserted row
-            // lastInsertId() = the value MySQL generated for monster_id
-            return $this->db->lastInsertId();
-
-        } catch (PDOException $e) {
-            // Database error (duplicate name, constraint violation, etc.)
-            return false;
-        }
-    }
-
-    // =========== READ - SINGLE MONSTER ===========
-
-    /**
-     * Get monster by ID
-     * Called from: MonsterController::show(), edit(), update(), delete()
-     * 
-     * @param int $id - Monster ID
-     * @return array|false - Monster data with deserialized arrays, or false
-     * 
-     * IMPORTANT: This method DESERIALIZES JSON automatically
-     * After: $monster['actions'] is a PHP array, not a JSON string
-     */
-    public function getById($id)
-    {
-        // STEP 1: Query database
-        $sql = "SELECT * FROM monster WHERE monster_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $id]);
-
-        // STEP 2: Fetch result
-        $monster = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // STEP 3: If found, deserialize JSON fields
-        // This converts JSON strings back to PHP arrays
-        if ($monster) {
-            $this->deserializeJsonFields($monster);
-        }
-
-        return $monster;  // Returns array or false
-    }
-
-    // =========== DESERIALIZATION HELPER ===========
-
-    /**
-     * Convert JSON strings back to PHP arrays
-     * Called automatically after database queries
-     * 
-     * FLOW:
-     * 1. Database returns: 'actions' => '[{"name":"Attack",...}]' (JSON string)
-     * 2. This method converts to: 'actions' => [['name'=>'Attack',...]] (PHP array)
-     * 3. Views can use: foreach($monster['actions'] as $action)
-     * 
-     * @param array $monster - Passed by reference (&) so changes persist
-     */
-    private function deserializeJsonFields(&$monster)
-    {
-        // Convert JSON string to PHP array
-        // json_decode($json, true) = 2nd param true = return as array, not object
-        
-        $monster['actions'] = !empty($monster['actions'])
-            ? json_decode($monster['actions'], true)
-            : [];  // Return empty array if empty JSON
-
-        $monster['reactions'] = !empty($monster['reactions'])
-            ? json_decode($monster['reactions'], true)
-            : [];
-
-        $monster['legendary_actions'] = !empty($monster['legendary_actions'])
-            ? json_decode($monster['legendary_actions'], true)
-            : [];
-    }
-
-    // =========== VALIDATION ===========
-
-    /**
-     * Validate monster creation/update form
-     * Called from: MonsterController::store(), update()
-     * 
-     * @param array $data - Form data
-     * @return array - Error messages (empty if valid)
-     * 
-     * VALIDATION TYPES:
-     * 1. REQUIRED fields - must not be empty
-     * 2. TYPE validation - int, string, etc.
-     * 3. RANGE validation - AC > 0, ability 1-30
-     * 4. ENUM validation - size must be one of: Tiny, Small, etc.
-     */
-    public function validate(array $data): array
-    {
-        $errors = [];
-
-        // ---- REQUIRED FIELDS ----
-        if (empty(trim($data['name'] ?? ''))) {
-            $errors['name'] = 'Monster name required';
-        }
-
-        if (empty($data['size'] ?? '')) {
-            $errors['size'] = 'Size required';
-        }
-
-        // ---- ENUM VALIDATION ----
-        // Size must be one of these exact values
-        $validSizes = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'];
-        if (!empty($data['size']) && !in_array($data['size'], $validSizes)) {
-            $errors['size'] = 'Invalid size';
-        }
-
-        // ---- NUMERIC VALIDATION WITH RANGE ----
-        // AC must be numeric and > 0
-        if (!is_numeric($data['ac'] ?? null) || (int)$data['ac'] < 1) {
-            $errors['ac'] = 'AC must be 1 or higher';
-        }
-
-        if (!is_numeric($data['hp'] ?? null) || (int)$data['hp'] < 1) {
-            $errors['hp'] = 'HP must be 1 or higher';
-        }
-
-        // ---- ABILITY SCORES (must be 1-30) ----
-        $abilities = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
-        foreach ($abilities as $ability) {
-            $value = (int)($data[$ability] ?? 10);
-            if ($value < 1 || $value > 30) {
-                $errors[$ability] = "$ability must be between 1 and 30";
-            }
-        }
-
-        return $errors;  // Empty = valid, non-empty = errors
-    }
-
-    // =========== UPDATE MONSTER ===========
-
-    /**
-     * Update existing monster
-     * Called from: MonsterController::update()
-     * 
-     * @param int $id - Monster ID
-     * @param array $data - Updated data
-     * @param int $userId - User ID (for ownership verification in controller)
-     * @return bool - true if successful
-     */
-    public function update($id, array $data, $userId)
-    {
-        try {
-            // Similar to create(), but UPDATE instead of INSERT
-            $sql = "UPDATE monster SET
-                name = :name,
-                size = :size,
-                type = :type,
-                alignment = :alignment,
-                ac = :ac,
-                hp = :hp,
-                hit_dice = :hit_dice,
-                ac_notes = :ac_notes,
-                speed = :speed,
-                strength = :strength,
-                dexterity = :dexterity,
-                constitution = :constitution,
-                intelligence = :intelligence,
-                wisdom = :wisdom,
-                charisma = :charisma,
-                proficiency_bonus = :proficiency_bonus,
-                saving_throws = :saving_throws,
-                skills = :skills,
-                senses = :senses,
-                languages = :languages,
-                challenge_rating = :challenge_rating,
-                damage_immunities = :damage_immunities,
-                damage_resistances = :damage_resistances,
-                damage_vulnerabilities = :damage_vulnerabilities,
-                condition_immunities = :condition_immunities,
-                traits = :traits,
-                actions = :actions,
-                bonus_actions = :bonus_actions,
-                reactions = :reactions,
-                legendary_actions = :legendary_actions,
-                is_legendary = :is_legendary,
-                legendary_resistance = :legendary_resistance,
-                legendary_resistance_lair = :legendary_resistance_lair,
-                lair_actions = :lair_actions,
-                image_portrait = :image_portrait,
-                image_fullbody = :image_fullbody,
-                card_size = :card_size,
-                is_public = :is_public,
-                updated_at = NOW()
-            WHERE monster_id = :id";
-
-            $stmt = $this->db->prepare($sql);
-            
-            // Execute with parameters (same as create, but also :id)
-            return $stmt->execute([
-                ':id'             => $id,
-                ':name'           => $data['name'],
-                ':size'           => $data['size'] ?? '',
-                ':type'           => $data['type'] ?? '',
-                ':alignment'      => $data['alignment'] ?? '',
-                ':ac'             => $data['ac'] ?? 10,
-                ':hp'             => $data['hp'] ?? 1,
-                ':hit_dice'       => $data['hit_dice'] ?? '',
-                ':ac_notes'       => $data['ac_notes'] ?? '',
-                ':speed'          => $data['speed'] ?? '',
-                ':strength'       => $data['strength'] ?? 10,
-                ':dexterity'      => $data['dexterity'] ?? 10,
-                ':constitution'   => $data['constitution'] ?? 10,
-                ':intelligence'   => $data['intelligence'] ?? 10,
-                ':wisdom'         => $data['wisdom'] ?? 10,
-                ':charisma'       => $data['charisma'] ?? 10,
-                ':proficiency_bonus' => $data['proficiency_bonus'] ?? 0,
-                ':saving_throws'  => $data['saving_throws'] ?? '',
-                ':skills'         => $data['skills'] ?? '',
-                ':senses'         => $data['senses'] ?? '',
-                ':languages'      => $data['languages'] ?? '',
-                ':challenge_rating' => $data['challenge_rating'] ?? '0',
-                ':damage_immunities' => $data['damage_immunities'] ?? '',
-                ':damage_resistances' => $data['damage_resistances'] ?? '',
-                ':damage_vulnerabilities' => $data['damage_vulnerabilities'] ?? '',
-                ':condition_immunities' => $data['condition_immunities'] ?? '',
-                ':traits'         => $data['traits'] ?? '',
-                ':actions'        => json_encode($data['actions'] ?? []),
-                ':bonus_actions'  => $data['bonus_actions'] ?? '',
-                ':reactions'      => json_encode($data['reactions'] ?? []),
-                ':legendary_actions' => json_encode($data['legendary_actions'] ?? []),
-                ':is_legendary'   => $data['is_legendary'] ?? 0,
-                ':legendary_resistance' => $data['legendary_resistance'] ?? '',
-                ':legendary_resistance_lair' => $data['legendary_resistance_lair'] ?? '',
-                ':lair_actions'   => $data['lair_actions'] ?? '',
-                ':image_portrait' => $data['image_portrait'] ?? null,
-                ':image_fullbody' => $data['image_fullbody'] ?? null,
-                ':card_size'      => $data['card_size'] ?? 1,
-                ':is_public'      => $data['is_public'] ?? 0
-            ]);
-
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
-
-    // =========== DELETE MONSTER ===========
-
-    /**
-     * Delete monster and associated files
-     * Called from: MonsterController::delete()
-     * 
-     * @param int $id - Monster to delete
-     * @param int $userId - Owner ID (for ownership check in controller)
-     * @return bool - true if successful
-     * 
-     * CLEANUP:
-     * 1. Delete database record
-     * 2. Delete associated image files
-     */
-    public function delete($id, $userId)
-    {
-        try {
-            // STEP 1: Get monster first (to get image filenames for deletion)
-            $monster = $this->getById($id);
-
-            // STEP 2: Delete image files from disk
-            if (!empty($monster['image_portrait'])) {
-                $portraitPath = __DIR__ . '/../../public/uploads/monsters/' . $monster['image_portrait'];
-                if (file_exists($portraitPath)) {
-                    unlink($portraitPath);  // Delete file
-                }
-            }
-
-            if (!empty($monster['image_fullbody'])) {
-                $fullbodyPath = __DIR__ . '/../../public/uploads/monsters/' . $monster['image_fullbody'];
-                if (file_exists($fullbodyPath)) {
-                    unlink($fullbodyPath);  // Delete file
-                }
-            }
-
-            // STEP 3: Delete database record
-            $sql = "DELETE FROM monster WHERE monster_id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $id]);
-
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
-}
-?>
-```
-
----
-
-## Security Deep Dive
-
-### 1. SQL Injection - How It Happens & How We Prevent It
-
-**VULNERABLE CODE (WRONG):**
-```php
-// User input: $email = "' OR '1'='1"
-$sql = "SELECT * FROM users WHERE u_email = '$email'";
-// Actual query: SELECT * FROM users WHERE u_email = '' OR '1'='1'
-// Result: Returns ALL users! Attacker bypassed authentication
-```
-
-**SAFE CODE (OUR APPROACH):**
-```php
-// User input: $email = "' OR '1'='1"
-$sql = "SELECT * FROM users WHERE u_email = :email";
-$stmt = $this->db->prepare($sql);
-$stmt->execute([':email' => $email]);
-
-// Flow:
-// 1. prepare() tells database: "SQL and data are separate"
-// 2. Database compiles SQL with placeholders
-// 3. execute() sends data separately
-// 4. Database knows: user input is DATA, not SQL code
-// 5. Result: Finds user with email = "' OR '1'='1", not bypassing query
-```
-
-### 2. Password Security - Bcrypt with Salting
-
-```php
-// When user registers:
-$password = "MyPassword123";  // User's plain text password
-$hashed = password_hash($password, PASSWORD_DEFAULT);
-// Result: $2y$10$... (67 characters, bcrypt format)
-// What happened:
-// 1. password_hash() generated random SALT (first 22 chars of hash)
-// 2. Applied bcrypt algorithm 2^10 times (very slow, prevents brute force)
-// 3. Stored only hash, never the plain password
-
-// When user logs in:
-$userInput = "MyPassword123";
-$storedHash = "$2y$10$...";  // From database
-if (password_verify($userInput, $storedHash)) {
-    // password_verify():
-    // 1. Extracts salt from stored hash
-    // 2. Applies same bcrypt algorithm to user input
-    // 3. Compares result to stored hash
-    // 4. Returns true only if they match
-    // SAFE: Even if hash is leaked, password can't be reversed
-}
-```
-
-### 3. File Upload Security
-
-```php
-// WRONG - Only checks filename:
-if (pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION) === 'jpg') {
-    // Attacker uploads shell.php renamed as shell.jpg
-    // Server executes PHP code!
-}
-
-// RIGHT - Check actual file content:
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$actualMime = finfo_file($finfo, $_FILES['file']['tmp_name']);
-// finfo reads file MAGIC BYTES (first few bytes)
-// tells actual file type, not what filename says
-
-if ($actualMime === 'image/jpeg') {
-    // Only REAL JPEGs allowed
-    // Attacker can't rename PHP as JPG - content will be wrong
-}
-
-// Also use random filename:
-$uniqueName = bin2hex(random_bytes(8)) . '_safe.jpg';
-// bin2hex(random_bytes(8)) = 16 random hex characters
-// Prevents directory traversal: ../../config.php
-// Prevents overwriting existing files
-```
-
----
-
-## Database Design Explained
-
+#### Users Table
 ```sql
 CREATE TABLE users (
-    u_id INT PRIMARY KEY AUTO_INCREMENT,      -- Unique identifier, auto-increment
-    u_username VARCHAR(100) UNIQUE NOT NULL,  -- Must be unique, can search
-    u_email VARCHAR(100) UNIQUE NOT NULL,     -- Must be unique, used for login
-    u_password VARCHAR(255) NOT NULL,         -- 255 chars for bcrypt hash
-    u_avatar VARCHAR(255),                    -- Filename (optional)
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- When account created
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP  -- When last updated
+    u_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_name VARCHAR(100) UNIQUE NOT NULL,
+    u_email VARCHAR(100) UNIQUE NOT NULL,
+    u_password VARCHAR(255) NOT NULL,          -- Bcrypt hash (60+ chars)
+    u_avatar VARCHAR(255),                     -- Filename
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+```
 
+#### Monsters Table
+```sql
 CREATE TABLE monster (
-    monster_id INT PRIMARY KEY AUTO_INCREMENT,      -- Unique identifier
-    u_id INT NOT NULL,                              -- Foreign key to users (owner)
+    monster_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT NOT NULL,                         -- Owner (FK to users)
+    name VARCHAR(255) NOT NULL,
     
-    -- Basic identification
-    name VARCHAR(255) NOT NULL,                     -- Monster name
-    size VARCHAR(50),                               -- Tiny, Small, Medium, etc.
-    type VARCHAR(100),                              -- Dragon, Beast, Humanoid, etc.
-    alignment VARCHAR(100),                         -- Chaotic Evil, etc.
+    -- D&D Basic Info
+    size VARCHAR(50),                          -- Tiny, Small, Medium, Large, Huge, Gargantuan
+    type VARCHAR(100),                         -- Dragon, Beast, Humanoid, etc.
+    alignment VARCHAR(100),                    -- Lawful Good, Chaotic Evil, etc.
     
-    -- Combat stats
-    ac INT DEFAULT 10,                              -- Armor Class
-    hp INT DEFAULT 1,                               -- Hit Points
-    hit_dice VARCHAR(100),                          -- e.g. "8d8 + 16"
-    ac_notes TEXT,                                  -- e.g. "shield +1"
-    speed TEXT,                                     -- e.g. "30 ft., fly 60 ft."
+    -- Combat Stats
+    ac INT DEFAULT 10,                         -- Armor Class
+    hp INT DEFAULT 1,                          -- Hit Points
+    hit_dice VARCHAR(100),                     -- e.g., "8d8 + 16"
+    speed TEXT,                                -- Movement speeds
     
-    -- Ability scores (6 stats)
-    strength INT DEFAULT 10,                        -- 1-30
+    -- Ability Scores (STR, DEX, CON, INT, WIS, CHA)
+    strength INT DEFAULT 10,
     dexterity INT DEFAULT 10,
     constitution INT DEFAULT 10,
     intelligence INT DEFAULT 10,
     wisdom INT DEFAULT 10,
     charisma INT DEFAULT 10,
     
-    -- More stats
+    -- More Stats
     proficiency_bonus INT DEFAULT 0,
-    saving_throws TEXT,
-    skills TEXT,
-    senses TEXT,
-    languages TEXT,
-    challenge_rating VARCHAR(50),
+    challenge_rating VARCHAR(50),              -- CR 1/8, 1/4, 1/2, 1, 2, etc.
+    xp INT DEFAULT 0,                          -- Experience points
     
-    -- Resistances/vulnerabilities
-    damage_immunities TEXT,
-    damage_resistances TEXT,
-    damage_vulnerabilities TEXT,
-    condition_immunities TEXT,
+    -- Features (stored as JSON for flexibility)
+    traits JSON,                               -- Non-combat abilities
+    actions JSON,                              -- Attack actions, abilities
+    bonus_actions TEXT,                        -- What can be done as bonus action
+    reactions JSON,                            -- Reactions (like Parry)
     
-    -- Complex features stored as JSON
-    traits TEXT,                                    -- Non-combat traits
-    actions JSON,                                   -- [{"name":"Attack","type":"melee",...}]
-    bonus_actions TEXT,
-    reactions JSON,                                 -- [{"name":"Parry","description":"..."}]
-    
-    -- Legendary features (for boss monsters)
-    is_legendary BOOLEAN DEFAULT 0,                -- 0 = false, 1 = true
-    legendary_actions JSON,                        -- [{"name":"Attack","cost":1,...}]
+    -- Legendary Features (for boss monsters)
+    is_legendary BOOLEAN DEFAULT 0,
+    legendary_actions JSON,                    -- Actions with action economy cost
     legendary_resistance TEXT,
-    legendary_resistance_lair TEXT,
     lair_actions TEXT,
     
     -- Images
-    image_portrait VARCHAR(255),                   -- Filename
-    image_fullbody VARCHAR(255),                   -- Filename
+    image_portrait VARCHAR(255),               -- Portrait/headshot
+    image_fullbody VARCHAR(255),               -- Full body image
     
     -- Metadata
-    card_size INT DEFAULT 1,
-    is_public BOOLEAN DEFAULT 0,                  -- 0 = private, 1 = public
+    is_public BOOLEAN DEFAULT 0,               -- 0=private, 1=public
+    like_count INT DEFAULT 0,                  -- Denormalized count for performance
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    -- Foreign key constraint
     FOREIGN KEY (u_id) REFERENCES users(u_id) ON DELETE CASCADE
-    -- CASCADE: if user deleted, delete all their monsters too
 );
 ```
 
-**Design Decisions Explained:**
+#### Collections Table
+```sql
+CREATE TABLE collections (
+    collection_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT NOT NULL,                         -- Owner (FK to users)
+    collection_name VARCHAR(100) NOT NULL,
+    share_token CHAR(32) UNIQUE,               -- 32-char hex token for sharing
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (u_id) REFERENCES users(u_id) ON DELETE CASCADE
+);
+```
 
-1. **JSON columns for arrays:**
-   - `actions`, `reactions`, `legendary_actions` are JSON
-   - Why? Each action has: name, type, description, and type-specific data
-   - Could normalize into separate tables, but: simpler code, fewer queries
-   - Trade-off: flexibility vs. queryability (good choice for this project)
+#### Collection-Monster Junction Table (Many-to-Many)
+```sql
+CREATE TABLE collection_monster (
+    collection_id INT NOT NULL,
+    monster_id INT NOT NULL,
+    PRIMARY KEY (collection_id, monster_id),
+    
+    FOREIGN KEY (collection_id) REFERENCES collections(collection_id) ON DELETE CASCADE,
+    FOREIGN KEY (monster_id) REFERENCES monster(monster_id) ON DELETE CASCADE
+);
+```
 
-2. **TEXT vs VARCHAR:**
-   - TEXT = unlimited length, but slower to search
-   - VARCHAR(255) = limited but indexed faster
-   - Used TEXT for: traits, skills, descriptions (user won't search these)
-   - Used VARCHAR for: name (often searched)
+#### Likes Table
+```sql
+CREATE TABLE monster_likes (
+    like_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT NOT NULL,                         -- User who liked
+    monster_id INT NOT NULL,                   -- Monster that was liked
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE KEY unique_user_monster (u_id, monster_id),  -- Prevent duplicate likes
+    FOREIGN KEY (u_id) REFERENCES users(u_id) ON DELETE CASCADE,
+    FOREIGN KEY (monster_id) REFERENCES monster(monster_id) ON DELETE CASCADE
+);
+```
 
-3. **Foreign Key with CASCADE:**
-   - `FOREIGN KEY (u_id) REFERENCES users(u_id)`
-   - Prevents: creating monster with non-existent user ID
-   - `ON DELETE CASCADE`: if user deleted, automatically delete their monsters
-   - Prevents: orphaned monster records
+#### Lair Cards Table
+```sql
+CREATE TABLE lair_card (
+    lair_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT NOT NULL,                         -- Owner
+    lair_name VARCHAR(255) NOT NULL,
+    lair_actions TEXT,                         -- Lair action descriptions
+    image_landscape VARCHAR(255),              -- Landscape image
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (u_id) REFERENCES users(u_id) ON DELETE CASCADE
+);
+```
 
-4. **TIMESTAMP with AUTO-UPDATE:**
-   - `created_at`: set once, never changes
-   - `updated_at`: automatically updates whenever row changes
-   - Useful for: audit trails, sorting by newest
+### Why This Schema Design?
+
+1. **Foreign Keys:** Maintain referential integrity
+   - Can't create monster with non-existent user
+   - `ON DELETE CASCADE`: Deleting user also deletes their monsters
+
+2. **UNIQUE Constraints:**
+   - `u_email UNIQUE`: Can't register twice with same email
+   - `u_username UNIQUE`: Usernames are unique identifiers
+   - `unique_user_monster`: Can't like same monster twice
+
+3. **JSON Columns:**
+   - `traits`, `actions`, `reactions`, `legendary_actions` are JSON
+   - More flexible than normalization for this use case
+   - Allows complex nested structures
+
+4. **Denormalization:**
+   - `like_count` stored in monster table
+   - Why? Prevents slow COUNT() queries on every page load
+   - Trade-off: Must update when like added/removed
 
 ---
 
-## Complete Request-Response Cycle
+## Part 5: Creating a Monster - CRUD Operations
 
-### Scenario: User Registers Account
+### The Complete Monster Creation Flow
 
-```
-1. USER PERSPECTIVE:
-   - Browser: GET http://localhost:8000?url=register
-   - Sees: Registration form
-   - Fills: username, email, password
-   - Clicks: "Register"
-   - Browser: POST to same URL with form data
+Creating a monster involves:
+1. Display creation form (GET)
+2. User fills form and submits (POST)
+3. Validate data (server-side)
+4. Save to database
+5. Redirect to detail view
 
-2. ROUTER (public/index.php):
-   - Receives: $_POST from browser
-   - Reads: $_GET['url'] = 'register'
-   - Looks up: routes['register'] = ['controller' => 'AuthController', 'action' => 'register']
-   - Creates: new AuthController()
-   - Calls: ->register()  [but this is POST, so goes to POST handling]
+### Step 1: Show Creation Form
 
-3. CONTROLLER (AuthController::register):
-   - Detects: $_SERVER['REQUEST_METHOD'] === 'POST'
-   - Extracts: $data = [username, email, password, confirm_password]
-   - Calls: $this->userModel->validateRegister($data)
-
-4. MODEL VALIDATION (User::validateRegister):
-   - Checks: username not empty ✓
-   - Checks: username length >= 3 ✓
-   - Calls: User::checkUsername($username)  [static, queries database]
-     - SELECT 1 FROM users WHERE u_username = 'newuser'
-     - Returns: false (not found, good)
-   - Checks: email format ✓
-   - Calls: User::checkMail($email)  [static, queries database]
-     - SELECT 1 FROM users WHERE u_email = 'new@example.com'
-     - Returns: false (not found, good)
-   - Checks: password length >= 8 ✓
-   - Checks: passwords match ✓
-   - Returns: $errors = []  (empty = all valid)
-
-5. CONTROLLER CREATES ACCOUNT:
-   - errors is empty, so proceed
-   - $hashedPassword = password_hash($password, PASSWORD_DEFAULT)
-     - Generates: bcrypt hash with random salt
-     - Result: "$2y$10$..." (67 character hash)
-   - Calls: $this->userModel->create($username, $email, $hashedPassword)
-
-6. MODEL INSERTS DATA:
-   - Builds: INSERT INTO users (u_username, u_email, u_password) VALUES (:username, :email, :password)
-   - Prepares: $stmt = $this->db->prepare($sql)  [SQL compiled with placeholders]
-   - Executes: $stmt->execute([...])  [Data sent separately from SQL]
-   - Database: Inserts row into users table
-   - Returns: true
-
-7. CONTROLLER REDIRECTS:
-   - Calls: header('Location: index.php?url=login')
-   - Tells: browser to make NEW GET request to login page
-   - exit: stops execution
-
-8. BROWSER:
-   - Receives: HTTP 302 redirect response
-   - Makes: NEW GET request to login page
-   - Sees: Login form
-   - User can now log in with new credentials
-```
-
----
-
-## Testing Each Component
-
-### Test 1: Security - SQL Injection Test
+**Source Code:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `create()` method
 
 ```php
-// In database lookup:
-$email = "' OR '1'='1";  // Attacker's input
+// src/controllers/MonsterController.php
 
-// VULNERABLE CODE:
-$sql = "SELECT * FROM users WHERE u_email = '$email'";
-// Becomes: "SELECT * FROM users WHERE u_email = '' OR '1'='1'"
-// Returns: ALL users
+public function create()
+{
+    // Check: User must be logged in
+    if (!isset($_SESSION['user'])) {
+        header('Location: index.php?url=login');
+        exit;
+    }
 
-// OUR CODE:
-$sql = "SELECT * FROM users WHERE u_email = :email";
-$stmt = $this->db->prepare($sql);
-$stmt->execute([':email' => $email]);
-// Returns: User with email exactly = "' OR '1'='1'" (none found)
-// SQL injection BLOCKED ✓
+    // Handle POST (form submission)
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $this->store();  // Go to Step 2
+        return;
+    }
+
+    // Handle GET (show form)
+    require ROOT . '/src/views/monster/create.php';
+}
 ```
 
-### Test 2: Password Security Test
+### Step 2: Validate and Save Data
+
+**Source Code:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `store()` method
 
 ```php
-// User registers with password: "SecurePass123"
-$hash = password_hash("SecurePass123", PASSWORD_DEFAULT);
-// Database stores: $2y$10$... (hash, not password)
+public function store()
+{
+    // Get data from form
+    $data = [
+        'name'      => $_POST['name'] ?? '',
+        'size'      => $_POST['size'] ?? '',
+        'type'      => $_POST['type'] ?? '',
+        'ac'        => (int)($_POST['ac'] ?? 10),
+        'hp'        => (int)($_POST['hp'] ?? 1),
+        'strength'  => (int)($_POST['strength'] ?? 10),
+        // ... more fields
+    ];
 
-// User tries to login with: "SecurePass123"
-if (password_verify("SecurePass123", $hash)) {
-   Code Documentation Standards
+    // Validate
+    $errors = $this->monsterModel->validate($data);
+    
+    if (!empty($errors)) {
+        // Show form again with errors
+        $_SESSION['errors'] = $errors;
+        $_SESSION['old_data'] = $data;
+        header('Location: index.php?url=monster-create');
+        exit;
+    }
 
-### Comprehensive Commenting Approach
+    // Add owner ID
+    $data['u_id'] = $_SESSION['user']['u_id'];
 
-All code has been systematically documented with the following focus areas:
+    // Save to database
+    $monsterId = $this->monsterModel->create($data);
 
-#### 1. PHP Native Functions Explained
-```php
-// htmlspecialchars() prevents XSS attacks by escaping HTML special characters
-// Example: "<script>" becomes "&lt;script&gt;" (safe to display)
-echo htmlspecialchars($monster['name']);
-
-// password_hash() uses bcrypt algorithm (auto-salting, one-way encryption)
-// PASSWORD_DEFAULT = bcrypt with cost factor 10 (2^10 iterations)
-// Result: 60-character string like "$2y$10$[salt][hash]"
-$hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-
-// password_verify() compares plaintext against hashed password securely
-// Returns: true if match, false otherwise (constant-time comparison)
-if (password_verify($password, $user['u_password'])) { /* login */ }
-
-// nl2br() converts newlines (\n) to HTML <br> tags for display
-// Example: "Line 1\nLine 2" → "Line 1<br>Line 2"
-echo nl2br(htmlspecialchars($monster['traits']));
-
-// number_format() adds thousands separator to numbers
-// Example: 25000 → "25,000"
-echo number_format($xp);
+    // Redirect to detail view
+    header('Location: index.php?url=monster-show&id=' . $monsterId);
+    exit;
+}
 ```
 
-#### 2. PHP Operators Documented
-```php
-// ?? (null coalescing operator): Use left value if exists, otherwise use right
-// Replaces: isset($x) ? $x : 'default'
-$traits = $traits ?? [];  // Empty array if $traits is null/undefined
+### Step 3: Complex Forms with JavaScript
 
-// ?: (ternary operator): Inline if-else
-// Format: condition ? valueIfTrue : valueIfFalse
-$modifier = $mod >= 0 ? "+{$mod}" : "{$mod}";
+#### Monster Form JavaScript
 
-// & (pass-by-reference): Modifies original array instead of copy
-// Without &: Changes inside loop don't affect original
-// With &: Changes persist after loop completes
-foreach ($monsters as &$monster) {
-    $this->deserializeJsonFields($monster);  // Modifies actual array
-✅ **Comprehensive documentation** - Every file systematically commented  
-✅ **Educational value** - Explains PHP/JS functions, security, D&D mechanics  
-✅ **Multiple card formats** - Playing card, A6 boss, landscape lair cards  
-✅ **JSON data handling** - Complex nested structures (actions, traits, legendary)  
-✅ **Dynamic forms** - JavaScript-powered action/trait builders  
-✅ **Print-ready layouts** - Custom @page sizes for physical card printing  
+**Source Code:** [public/js/monster-form.js](public/js/monster-form.js)
 
-### Documentation Achievement
+The monster creation form is complex because:
+- D&D ability scores (6 different stats)
+- Automatic modifier calculations
+- Dynamic action/trait/reaction builders
+- Image uploads with validation
 
-**December 2025 Update:** Completed comprehensive documentation pass covering:
-- **All PHP files** explaining native functions (htmlspecialchars, password_hash, nl2br, etc.)
-- **All JavaScript** with JSDoc comments and D&D calculation formulas
-- **All CSS** explaining Grid, Flexbox, print media queries, hover effects
-- **Security patterns** (prepared statements, bcrypt, XSS prevention, ownership checks)
-- **D&D 5e mechanics** (ability modifiers, CR, legendary actions, saving throws)
-- **Bootstrap integration** (grid system, utilities, modal behavior, CDN loading)
+**Key JavaScript Features:**
 
-**Code Quality Metrics:**
-- 30+ files with comprehensive inline comments
-- 100% of controllers documented with method-level explanations
-- 100% of models documented with PDO patterns and SQL security
-- 100% of key views documented with PHP operators and native functions
-- JavaScript fully documented with guard clauses and event handling
-- CSS documented with layout techniques and print optimization
-
-The application is **production-ready**, **fully documented**, and **easily extensible** for new features. The codebase serves as both a functional D&D tool and an educational resource for understanding PHP MVC architecture, database security, and full-stack web development pattern
-
-#### 3. JavaScript Functions Documented
 ```javascript
 /**
- * Calculate D&D 5e ability modifier from ability score.
- * 
- * Formula: (score - 10) / 2, rounded DOWN
- * Examples:
- * - Score 16: (16-10)/2 = 3 → Modifier +3
- * - Score 8:  (8-10)/2 = -1 → Modifier -1
- * 
- * @param {number} score - Ability score (1-30 range typical)
- * @return {number} Ability modifier (-5 to +10 typical range)
+ * Calculate D&D 5e ability modifier from ability score
+ * Formula: (score - 10) / 2, rounded down
+ * Example: Score 16 → (16-10)/2 = +3 modifier
  */
 function calculateModifier(score) {
-    // Math.floor() rounds down to nearest integer
     return Math.floor((score - 10) / 2);
 }
 
-// querySelector() finds first element matching CSS selector
-// Returns: HTMLElement or null if not found
-const element = document.querySelector('[data-ability="str"]');
+// Update modifier display when ability score changes
+document.getElementById('strength').addEventListener('input', function() {
+    const mod = calculateModifier(this.value);
+    const sign = mod >= 0 ? '+' : '';
+    document.getElementById('str-modifier').textContent = sign + mod;
+});
 
-// addEventListener() registers function to run when event occurs
-// Event types: 'input' (fires while typing), 'change' (fires on blur)
-input.addEventListener('input', updateCalculations);
-```
-
-#### 4. D&D 5e Mechanics Explained
-```php
-// Challenge Rating (CR): Difficulty measure for encounter balancing
-// CR determines XP reward and proficiency bonus
-// Examples: CR 0 = 10 XP, CR 1 = 200 XP, CR 13 = 10,000 XP
-
-// Ability Modifier Formula: (score - 10) / 2, rounded down
-// Example: STR 16 → (16-10)/2 = 3 → +3 modifier
-$modifier = floor(($score - 10) / 2);
-
-// Legendary Actions: Boss monsters get 3 actions per round
-// Used at end of other creatures' turns
-// Each action has a cost (typically 1-3)
-
-// Legendary Resistance: Auto-succeed on failed saves (typically 3/day)
-// Prevents control spells from ending boss fights too easily
-```
-
-#### 5. Security Patterns Documented
-```php
-// Prepared statements prevent SQL injection
-// How it works:
-// 1. Send SQL template to database (with :placeholders)
-// 2. Database parses/optimizes query BEFORE values inserted
-// 3. Values bound separately (cannot alter query structure)
-$stmt = $this->db->prepare("SELECT * FROM users WHERE u_email = :email");
-$stmt->execute([':email' => $email]);  // Safe: email treated as DATA only
-
-// Session management: Server-side storage, client gets cookie with ID
-// $_SESSION persists across requests until logout or timeout
-$_SESSION['user'] = ['u_id' => 1, 'u_username' => 'Alex'];
-
-// Owner verification: Ensure user owns resource before edit/delete
-if ($monster['u_id'] != $_SESSION['user']['u_id']) {
-    http_response_code(403);  // Forbidden
-    exit('Not authorized');
+/**
+ * Add new action row to dynamic form
+ * Allows user to add multiple actions without page reload
+ */
+function addAction() {
+    const container = document.getElementById('actions-container');
+    const newRow = `
+        <div class="action-row">
+            <input type="text" name="action_name[]" placeholder="e.g., Multiattack">
+            <textarea name="action_desc[]" placeholder="Description..."></textarea>
+            <button type="button" onclick="this.parentElement.remove()">Remove</button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', newRow);
 }
 ```
 
-#### 6. Documentation Metrics
+### Step 4: Image Handling
 
-**Files Fully Documented:**
-- ✅ All Controllers (AuthController, MonsterController, LairCardController, PagesController, HomeController)
-- ✅ All Models (Database, User, Monster, LairCard)
-- ✅ All View Templates (header, footer, action-buttons, monster-card-mini)
-- ✅ Key Views (show.php, create.php, small-statblock.php, boss-card.php, all lair views)
-- ✅ All CSS Files (boss-card.css, lair-card.css, monster-card-mini.css)
-- ✅ All JavaScript (monster-form.js with JSDoc comments)
-- ✅ Router (public/index.php with route grouping explanations)
+#### Image Upload Validation
 
-**Comment Types Used:**
-- Docblocks explaining method purpose and parameters
-- Inline comments for complex logic
-- Guard clause explanations (early returns)
-- Native function documentation (first use)
-- Security pattern explanations
-- D&D rule references
-- Bootstrap/CSS framework notes
+**Source Code:** [src/models/FileUploadService.php](src/models/FileUploadService.php)
 
----
-
-## Potential Improvements (Future Development)
-
-1. **Pagination:** `LIMIT 10 OFFSET 0` on monster listing
-2. **Searching:** Full-text search on monster names/descriptions
-3. **Caching:** Redis for public monsters list
-4. **API:** RESTful endpoints for mobile apps
-5. **Unit Tests:** PHPUnit for automated testing
-6. **Email Verification:** Confirm email before registration complete
-7. **Rate Limiting:** Prevent brute force login attempts
-8. **Logging:** Record failed logins, database errors
-9. **Two-Factor Auth:** Extra security for accounts
-10. **Image Optimization:** Resize/compress before storing
-11. **Export Features:** PDF export for card sheets
-12. **Spell Integration:** Link monster actions to spell database
-13. **Encounter Builder:** Calculate CR for monster groups
-// Can't reverse hash back to "SecurePass123"
-// Bcrypt is one-way, very slow to brute force (2^10 iterations)
-```
-
-### Test 3: Authorization Test
+Proper image handling requires security checks:
 
 ```php
-// User 1 creates monster ID 5
-// User 2 tries to edit it
+class FileUploadService
+{
+    private $allowedMimes = ['image/jpeg', 'image/png'];
+    private $maxSize = 5 * 1024 * 1024;  // 5 MB
+    private $uploadDir;
 
-// In MonsterController::update():
-$monster = $this->monsterModel->getById(5);
-// Gets: ['monster_id' => 5, 'u_id' => 1, ...]
+    public function upload($file, $category = 'monsters')
+    {
+        // STEP 1: Verify file exists
+        if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            throw new Exception('No file uploaded');
+        }
 
-$userId = $_SESSION['user']['u_id'];  // = 2
-if ($monster['u_id'] != $userId) {
-    // 1 != 2, so condition is TRUE
-    // User 2 is NOT the owner
-    http_response_code(403);  // Forbidden
-    exit('Not authorized');
+        // STEP 2: Check file size
+        if ($file['size'] > $this->maxSize) {
+            throw new Exception('File too large (max 5MB)');
+        }
+
+        // STEP 3: Verify actual MIME type (not just filename)
+        // finfo reads file MAGIC BYTES (first few bytes that identify type)
+        // Prevents attacker from renaming shell.php to shell.jpg
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $actualMime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($actualMime, $this->allowedMimes)) {
+            throw new Exception('Invalid file type');
+        }
+
+        // STEP 4: Generate unique filename
+        // Use random filename, not original
+        // Prevents: directory traversal (../../config.php), overwriting files
+        $uniqueName = bin2hex(random_bytes(8)) . '.' . 
+                      pathinfo($file['name'], PATHINFO_EXTENSION);
+
+        // STEP 5: Move file to safe location
+        $destination = $this->uploadDir . $category . '/' . $uniqueName;
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            throw new Exception('Failed to save file');
+        }
+
+        return $uniqueName;
+    }
 }
-// User 2 CANNOT edit User 1's monster ✓
+```
+
+#### How to Use in Controller
+
+**Source Code:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `store()` method
+
+```php
+public function store()
+{
+    // ... validate basic data ...
+
+    // Handle image upload
+    if (isset($_FILES['portrait']) && $_FILES['portrait']['size'] > 0) {
+        try {
+            $portraitFile = (new FileUploadService())->upload(
+                $_FILES['portrait'],
+                'monsters'
+            );
+            $data['image_portrait'] = $portraitFile;
+        } catch (Exception $e) {
+            $_SESSION['errors'][] = 'Image: ' . $e->getMessage();
+        }
+    }
+
+    // Now save to database with image filename
+    $monsterId = $this->monsterModel->create($data);
+}
+```
+
+### Step 5: Retrieve/Update/Delete
+
+**Source Code:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `show()`, `update()`, `delete()` methods
+
+```php
+// READ: Show monster details
+public function show()
+{
+    $monsterId = (int)($_GET['id'] ?? 0);
+    $monster = $this->monsterModel->getById($monsterId);
+
+    // Check: Monster must be public OR user must own it
+    if (!$monster['is_public'] && $monster['u_id'] != ($_SESSION['user']['u_id'] ?? null)) {
+        http_response_code(403);
+        exit('Not authorized');
+    }
+
+    require ROOT . '/src/views/monster/show.php';
+}
+
+// UPDATE: Edit monster
+public function update()
+{
+    $monsterId = (int)($_POST['id'] ?? 0);
+    $monster = $this->monsterModel->getById($monsterId);
+
+    // Check: Must own the monster to edit
+    if ($monster['u_id'] != $_SESSION['user']['u_id']) {
+        http_response_code(403);
+        exit('Not authorized');
+    }
+
+    // Validate new data, update, redirect
+}
+
+// DELETE: Remove monster
+public function delete()
+{
+    $monsterId = (int)($_GET['id'] ?? 0);
+    $monster = $this->monsterModel->getById($monsterId);
+
+    // Check: Must own the monster to delete
+    if ($monster['u_id'] != $_SESSION['user']['u_id']) {
+        http_response_code(403);
+        exit('Not authorized');
+    }
+
+    $this->monsterModel->delete($monsterId);
+    header('Location: index.php?url=monster-list');
+    exit;
+}
 ```
 
 ---
 
-## Potential Improvements (Future Development)
+## Part 6: Print Optimization - Download & Complex CSS
 
-1. **Pagination:** `LIMIT 10 OFFSET 0` on monster listing
-2. **Searching:** Full-text search on monster names/descriptions
-3. **Caching:** Redis for public monsters list
-4. **API:** RESTful endpoints for mobile apps
-5. **Unit Tests:** PHPUnit for automated testing
-6. **Email Verification:** Confirm email before registration complete
-7. **Rate Limiting:** Prevent brute force login attempts
-8. **Logging:** Record failed logins, database errors
-9. **Two-Factor Auth:** Extra security for accounts
-10. **Image Optimization:** Resize/compress before storing
+### Printable Card Formats
+
+Monster Maker generates three different printable card formats:
+
+#### 1. Playing Card (2.5" × 3.5")
+**CSS:** [public/css/small-statblock.css](public/css/small-statblock.css)  
+**HTML View:** [src/views/monster/small-statblock.php](src/views/monster/small-statblock.php)
+
+Used for: Printing stat cards that fit in a standard playing card deck
+
+```css
+/* Physical playing card dimensions */
+@page {
+    size: 2.5in 3.5in;
+    margin: 0.1in;
+}
+
+body {
+    width: 2.5in;
+    height: 3.5in;
+    font-size: 8pt;      /* Small for card size */
+    column-count: 1;
+    break-inside: avoid;
+}
+
+/* Fit all content on one card */
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card-name {
+    font-weight: bold;
+    font-size: 10pt;
+    border-bottom: 1px solid;
+}
+
+.card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;  /* 2 columns */
+    gap: 2px;
+    font-size: 7pt;
+}
+
+/* Print media query: hide UI elements not needed on print */
+@media print {
+    .no-print { display: none; }  /* Hide buttons, navigation */
+    body { background: white; }     /* No color backgrounds */
+}
+```
+
+#### 2. A6 Boss Card (5.8" × 4.1" horizontal)
+**CSS:** [public/css/boss-card.css](public/css/boss-card.css)  
+**HTML View:** [src/views/monster/boss-card.php](src/views/monster/boss-card.php)
+
+Used for: Larger boss monster cards with more space for details
+
+```css
+@page {
+    size: A6 landscape;  /* 5.8" × 4.1" */
+    margin: 0.2in;
+}
+
+.boss-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;  /* Two-column layout */
+    gap: 10px;
+    height: 100%;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);  /* 3 columns for 6 abilities */
+    gap: 4px;
+    font-size: 9pt;
+}
+
+.ability {
+    border: 1px solid;
+    padding: 4px;
+    text-align: center;
+}
+
+.ability-score {
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+.ability-mod {
+    color: #666;
+    font-size: 8pt;
+}
+```
+
+#### 3. Lair Card (Landscape 5" × 3.5")
+**CSS:** [public/css/lair-card.css](public/css/lair-card.css)  
+**HTML View:** [src/views/lair/show.php](src/views/lair/show.php)
+
+Used for: Lair action cards displayed during combat
+
+```css
+@page {
+    size: 5in 3.5in landscape;
+    margin: 0.15in;
+}
+
+.lair-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-size: 10pt;
+}
+
+.lair-title {
+    border-bottom: 2px solid;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.lair-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.action {
+    page-break-inside: avoid;
+    margin-bottom: 4px;
+}
+```
+
+### JavaScript for Download/Print
+
+**Source Code:** [public/js/card-download.js](public/js/card-download.js)
+
+```javascript
+/**
+ * Generate PDF from visible page content using jsPDF library
+ * jsPDF is loaded from CDN: https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js
+ */
+function downloadPDF(pageTitle, pageSize = 'a6', orientation = 'l') {
+    // STEP 1: Hide UI elements (buttons, navigation)
+    const printButtons = document.querySelectorAll('.print-hide');
+    printButtons.forEach(btn => btn.style.display = 'none');
+
+    // STEP 2: Get the content div
+    const element = document.getElementById('printable-content');
+
+    // STEP 3: Create PDF using jsPDF
+    const pdf = new jsPDF({
+        orientation: orientation,  // 'l' = landscape, 'p' = portrait
+        unit: 'in',
+        format: pageSize
+    });
+
+    // STEP 4: Add HTML content to PDF
+    pdf.html(element, {
+        callback: function(pdf) {
+            // STEP 5: Save PDF with filename
+            pdf.save(pageTitle + '.pdf');
+        },
+        margin: 0.1,
+        autoPaging: 'text'
+    });
+
+    // STEP 6: Show UI elements again
+    printButtons.forEach(btn => btn.style.display = '');
+}
+
+// Usage:
+// downloadPDF('Goblin_Boss', 'a6', 'l');  // A6 landscape PDF
+// downloadPDF('Goblin_Card', 'card', 'p');  // Playing card portrait PDF
+
+/**
+ * Browser print dialog (Ctrl+P)
+ * Uses @media print CSS rules above
+ */
+function printCard() {
+    window.print();
+}
+```
+
+### CSS Grid & Flexbox Techniques
+
+The card layouts use modern CSS for responsive printing:
+
+```css
+/* Flexible grid that adapts to available space */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+    gap: 4px;
+}
+
+/* Absolute positioning for image backgrounds */
+.card {
+    position: relative;
+    background-image: url('parchment.jpg');
+    background-size: cover;
+}
+
+.card-content {
+    position: relative;
+    z-index: 1;  /* Appear above background image */
+    padding: 8px;
+}
+
+/* Flexbox for vertical centering of stats */
+.ability {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Prevent content breaks across pages */
+@media print {
+    .action { page-break-inside: avoid; }
+    .trait { page-break-inside: avoid; }
+}
+```
+
+---
+
+## Part 7: User Authentication & Protection
+
+### User Registration & Security
+
+#### What Protections Are in Place?
+
+1. **Password Security - Bcrypt Hashing**
+   ```php
+   // Store: bcrypt hash with random salt, not plain password
+   $hashed = password_hash($password, PASSWORD_DEFAULT);
+   // Result: "$2y$10$..." (60 characters)
+   
+   // Verify: Compare user input against stored hash
+   if (password_verify($password, $hashed)) {
+       // Password matches
+   }
+   ```
+
+2. **SQL Injection Prevention - Prepared Statements**
+   ```php
+   // WRONG: Vulnerable to SQL injection
+   $sql = "SELECT * FROM users WHERE email = '$email'";
+   
+   // RIGHT: Prepared statements separate code from data
+   $sql = "SELECT * FROM users WHERE email = :email";
+   $stmt = $this->db->prepare($sql);
+   $stmt->execute([':email' => $email]);
+   ```
+
+3. **XSS Prevention - Escaping Output**
+   ```php
+   // WRONG: Can execute JavaScript
+   echo $user['username'];  // If username = "<script>alert('hacked')</script>"
+   
+   // RIGHT: Escape HTML special characters
+   echo htmlspecialchars($user['username']);  // Outputs: &lt;script&gt;...
+   ```
+
+4. **CSRF Protection - Session Validation**
+   ```php
+   // Every form submission checked against session
+   if ($user['u_id'] != $_SESSION['user']['u_id']) {
+       // Request is from different user - rejected
+   }
+   ```
+
+5. **File Upload Security**
+   - Check actual MIME type (not just filename)
+   - Verify file size limits
+   - Generate random filename (prevents overwrite, traversal)
+   - Store outside web root if possible
+
+#### Current Registration Form
+
+**Source Code:** [src/views/auth/register.php](src/views/auth/register.php)
+
+```php
+// src/views/auth/register.php
+
+<form method="POST" action="">
+    <div>
+        <label>Username:</label>
+        <input type="text" name="username" required minlength="3" maxlength="100">
+        <small>3-100 characters, letters and numbers only</small>
+    </div>
+
+    <div>
+        <label>Email:</label>
+        <input type="email" name="email" required>
+        <small>Must be a valid email address</small>
+    </div>
+
+    <div>
+        <label>Password:</label>
+        <input type="password" name="password" required minlength="8">
+        <small>Minimum 8 characters (uppercase, lowercase, numbers recommended)</small>
+    </div>
+
+    <div>
+        <label>Confirm Password:</label>
+        <input type="password" name="confirm_password" required minlength="8">
+    </div>
+
+    <button type="submit">Register</button>
+</form>
+```
+
+### What Should Be Added Before Production Release?
+
+#### 1. **CAPTCHA - Prevent Bot Attacks**
+```php
+// Add Google reCAPTCHA v3 (invisible, no clicking needed)
+<script src="https://www.google.com/recaptcha/api.js"></script>
+
+// Server-side verification:
+$token = $_POST['g-recaptcha-response'];
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, "https://www.google.com/recaptcha/api/siteverify");
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+    'secret' => RECAPTCHA_SECRET_KEY,
+    'response' => $token
+]));
+$response = json_decode(curl_exec($ch));
+
+if (!$response->success || $response->score < 0.5) {
+    // Reject registration - likely bot
+}
+```
+
+#### 2. **Email Verification - Confirm Address**
+```php
+// Send verification link to email
+$verificationToken = bin2hex(random_bytes(32));
+// Store: $verificationToken, $email, $expiresAt = now + 24 hours in database
+
+// Email contains: http://localhost:8000?url=verify-email&token=...
+// User clicks link, token verified, account activated
+```
+
+#### 3. **Two-Factor Authentication - Extra Security**
+```php
+// After password login, require code from:
+// - Google Authenticator app
+// - SMS text message
+// - Email link
+
+// Prevents: account takeover even if password leaked
+```
+
+#### 4. **Rate Limiting - Prevent Brute Force**
+```php
+// Track login attempts per IP address
+// If > 5 failed attempts in 15 minutes, block temporarily
+// Prevents: attackers guessing passwords
+
+// Implementation:
+// - Log each login attempt with timestamp
+// - Check: COUNT(*) WHERE ip = ... AND timestamp > now() - 15min
+// - If > 5, respond with: "Too many attempts, try again later"
+```
+
+#### 5. **Email Notifications - Alert of Changes**
+```php
+// Send email when:
+// - Account created
+// - Password changed
+// - Profile updated
+// - Someone tries wrong password (X times)
+
+// Helps user detect unauthorized access
+```
+
+#### 6. **Audit Logging - Track Actions**
+```php
+// Create logs table:
+CREATE TABLE audit_logs (
+    log_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT,
+    action VARCHAR(100),          -- 'login', 'create_monster', 'delete_collection'
+    ip_address VARCHAR(45),
+    user_agent VARCHAR(255),
+    timestamp TIMESTAMP
+);
+
+// Log important actions:
+$this->logAction($_SESSION['user']['u_id'], 'login', $_SERVER['REMOTE_ADDR']);
+
+// Helps detect suspicious activity
+```
+
+---
+
+## Part 8: Browsing & Searching - SQL Query Optimization
+
+### Finding & Displaying Monsters
+
+The browsing page shows paginated, filtered list of all public monsters.
+
+#### Challenge: Efficient Query
+
+When you have 10,000+ monsters, loading all of them is slow. Solution: Use LIMIT and OFFSET.
+
+**Source Code:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `index()` method
+
+**Query (with pagination):**
+```sql
+SELECT 
+    m.monster_id,
+    m.name,
+    m.size,
+    m.type,
+    m.cr,
+    m.image_portrait,
+    m.like_count,
+    m.u_id,
+    u.u_name as creator_name,
+    COUNT(l.like_id) as actual_like_count,
+    CASE WHEN l.u_id = ? THEN 1 ELSE 0 END as user_liked
+FROM monster m
+LEFT JOIN users u ON m.u_id = u.u_id
+LEFT JOIN monster_likes l ON m.monster_id = l.monster_id
+WHERE m.is_public = 1
+GROUP BY m.monster_id
+ORDER BY m.created_at DESC
+LIMIT 10 OFFSET 0;  -- First 10 monsters
+```
+
+**PHP Code:**
+```php
+public function index()
+{
+    $page = (int)($_GET['page'] ?? 1);
+    $perPage = 10;
+    $offset = ($page - 1) * $perPage;
+
+    // Get total count for pagination
+    $total = $this->monsterModel->countPublic();
+    $totalPages = ceil($total / $perPage);
+
+    // Get monsters for current page
+    $monsters = $this->monsterModel->getPublic($offset, $perPage);
+
+    // Get current user's likes (if logged in)
+    $userLikes = [];
+    if (isset($_SESSION['user'])) {
+        $userLikes = $this->likeModel->getUserLikes(
+            $_SESSION['user']['u_id'],
+            array_column($monsters, 'monster_id')
+        );
+    }
+
+    // Render
+    require ROOT . '/src/views/monster/index.php';
+}
+```
+
+#### Optimizing the Query
+
+**Index on is_public:**
+```sql
+CREATE INDEX idx_public ON monster(is_public, created_at DESC);
+-- Helps database quickly find public monsters and sort them
+```
+
+**Index on likes:**
+```sql
+CREATE INDEX idx_likes_user ON monster_likes(u_id, monster_id);
+-- Helps database quickly find monsters a user has liked
+```
+
+**Why LEFT JOIN for likes?**
+```
+LEFT JOIN: Include monster even if NO one has liked it
+INNER JOIN: Would exclude monsters with 0 likes (wrong!)
+
+LEFT JOIN keeps all monsters, adds NULL for likes column if no likes exist
+```
+
+---
+
+## Part 9: Collection System & Sharing
+
+### Creating Collections
+
+Users can create a collection to organize monsters.
+
+**Source Code:** [src/controllers/CollectionController.php](src/controllers/CollectionController.php) - `createAndAdd()` method
+
+**Atomic Operation Example:**
+```php
+// CREATE COLLECTION AND ADD MONSTER (all-or-nothing)
+public function createAndAdd()
+{
+    $userId = $_SESSION['user']['u_id'];
+    $collectionName = $_POST['name'];
+    $monsterId = (int)$_POST['monster_id'];
+
+    try {
+        // STEP 1: Create collection
+        $collectionId = $this->collectionModel->create($userId, $collectionName);
+
+        // STEP 2: Add monster
+        $this->collectionModel->addMonster($collectionId, $monsterId);
+
+        // Success - return collection ID
+        http_response_code(200);
+        echo json_encode(['success' => true, 'collection_id' => $collectionId]);
+    } catch (Exception $e) {
+        // STEP 3: ROLLBACK - Delete collection if add fails
+        // Prevents orphaned empty collections
+        $this->collectionModel->delete($collectionId);
+
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+```
+
+### Sharing Collections via Tokens
+
+Users can share their collections with a secure token (not just user ID).
+
+**Source Code:** [src/controllers/CollectionController.php](src/controllers/CollectionController.php) - `share()` and `viewShared()` methods
+
+**Token Generation:**
+```php
+public function share($collectionId)
+{
+    // Generate random 32-character hex string
+    $token = bin2hex(random_bytes(16));  // 16 bytes = 32 hex chars
+
+    // Store token in database
+    $sql = "UPDATE collections SET share_token = :token WHERE collection_id = :id";
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([':token' => $token, ':id' => $collectionId]);
+
+    // Return: http://localhost:8000?url=collection-share&token=a3f2e8b1c7d4e9f2a5b6c8d1e3f4a5b6
+    return [
+        'token' => $token,
+        'url' => 'http://localhost:8000?url=collection-share&token=' . $token
+    ];
+}
+```
+
+**Why tokens instead of user IDs?**
+- Token: `a3f2e8b1c7d4e9f2a5b6c8d1e3f4a5b6` (32^16 possibilities)
+- ID: `42` (can guess all IDs from 1 to N)
+- Tokens can't be enumerated; IDs can be brute-forced
+
+**View Shared Collection:**
+```php
+public function viewShared()
+{
+    $token = $_GET['token'] ?? '';
+
+    // Find collection by token
+    $collection = $this->collectionModel->getByToken($token);
+
+    if (!$collection) {
+        http_response_code(404);
+        exit('Collection not found');
+    }
+
+    // Get monsters in collection
+    $monsters = $this->collectionModel->getMonsters($collection['collection_id']);
+
+    // Render public view
+    require ROOT . '/src/views/collection/public-view.php';
+}
+```
+
+---
+
+## Part 10: Like System & AJAX
+
+### How Likes Work
+
+**Source Code:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - Complete like system  
+**Implementation in Controller:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `toggleLike()` method
+
+**Database Design:**
+```sql
+CREATE TABLE monster_likes (
+    like_id INT PRIMARY KEY AUTO_INCREMENT,
+    u_id INT NOT NULL,
+    monster_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE KEY (u_id, monster_id)  -- Can't like same monster twice
+);
+```
+
+### AJAX Flow
+
+When user clicks heart icon:
+
+```
+1. User clicks ❤️ heart button
+    ↓
+2. JavaScript preventDefault() (no page reload)
+    ↓
+3. fetch() AJAX request to index.php?url=monster-like&id=123
+    ↓
+4. MonsterController::toggleLike() handles request
+    ├─ Check: User logged in?
+    ├─ Check: Monster exists and is public?
+    ├─ Call: MonsterLike->toggleLike()
+    │   ├─ Check: User already liked it?
+    │   ├─ If yes: DELETE from database
+    │   ├─ If no: INSERT into database
+    │   └─ Return: "added" or "removed"
+    ├─ Call: MonsterLike->countLikes()
+    │   └─ Return: New total like count
+    └─ Send JSON response: {success: true, action: "added", count: 5, liked: true}
+    ↓
+5. JavaScript receives response
+    ├─ Parse JSON
+    ├─ Update heart icon (fill or empty)
+    ├─ Update counter number (5)
+    └─ No page reload - instant feedback
+    ↓
+6. User sees: Heart filled, count = 5
+```
+
+### Implementation
+
+**Source Code:**
+- **Frontend JavaScript:** [public/js/monster-actions.js](public/js/monster-actions.js) - `toggleLike()` function  
+- **Backend PHP Controller:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `toggleLike()` method  
+- **Database Model:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - `toggleLike()`, `countLikes()`, `hasLiked()` methods
+
+**Frontend - JavaScript**
+```javascript
+/**
+ * Toggle like when user clicks heart
+ * AJAX request - no page reload
+ */
+function toggleLike(event, monsterId) {
+    // STEP 1: Prevent default (no page reload)
+    event.preventDefault();
+
+    // STEP 2: Find UI elements
+    const btn = event.target.closest('button.like-btn');
+    const icon = btn.querySelector('i');
+    const countSpan = btn.querySelector('.like-count');
+
+    // STEP 3: Disable button (prevent double-click)
+    btn.disabled = true;
+
+    // STEP 4: Send AJAX request
+    fetch('index.php?url=monster-like&id=' + monsterId)
+        .then(response => response.json())
+        .then(data => {
+            // STEP 5: Update UI
+            if (data.liked) {
+                // User just liked it - show filled heart
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+            } else {
+                // User just unliked it - show empty heart
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+            }
+            countSpan.textContent = data.count;
+        })
+        .catch(error => alert('Error: ' + error))
+        .finally(() => {
+            // STEP 6: Re-enable button
+            btn.disabled = false;
+        });
+}
+```
+
+**Backend - PHP**
+```php
+public function toggleLike()
+{
+    // Set response type to JSON
+    header('Content-Type: application/json');
+
+    // Check: User logged in?
+    if (!isset($_SESSION['user'])) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Not logged in']);
+        return;
+    }
+
+    // Get parameters
+    $userId = $_SESSION['user']['u_id'];
+    $monsterId = (int)($_GET['id'] ?? 0);
+
+    // Check: Monster exists and is public?
+    $monster = $this->monsterModel->getById($monsterId);
+    if (!$monster || !$monster['is_public']) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Not allowed']);
+        return;
+    }
+
+    // Toggle like
+    $action = $this->likeModel->toggleLike($userId, $monsterId);
+    $count = $this->likeModel->countLikes($monsterId);
+
+    // Return JSON response
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'action' => $action,
+        'count' => $count,
+        'liked' => ($action === 'added')
+    ]);
+}
+```
+
+### Persistence: Showing Liked State on Page Load
+
+On every page, the controller loads user's liked monsters.
+
+**Source Code:**
+- **Controller Loading Likes:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `index()` and other action methods  
+- **Model Fetching:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - `getUserLikes()` method  
+- **View Display Heart:** [src/views/templates/monster-card-mini.php](src/views/templates/monster-card-mini.php) - Heart button rendering
+
+```php
+public function index()
+{
+    // Get monsters
+    $monsters = $this->monsterModel->getPublic();
+
+    // Get user's liked monsters (if logged in)
+    $userLikes = [];
+    if (isset($_SESSION['user'])) {
+        $userLikes = $this->likeModel->getUserLikes(
+            $_SESSION['user']['u_id'],
+            array_column($monsters, 'monster_id')
+        );
+    }
+
+    // Pass to view
+    require ROOT . '/src/views/monster/index.php';
+}
+```
+
+In the view:
+```php
+<?php
+// Set $isLiked before rendering heart button
+$isLiked = in_array($monster['monster_id'], $userLikes ?? []);
+?>
+
+<button class="like-btn" onclick="toggleLike(event, <?php echo $monster['monster_id']; ?>)">
+    <i class="bi <?php echo $isLiked ? 'bi-heart-fill' : 'bi-heart'; ?>"></i>
+    <span class="like-count"><?php echo $monster['like_count']; ?></span>
+</button>
+```
+
+---
+
+## Part 11: Next Steps & Future Development
+
+### Short Term (1-2 weeks)
+
+1. **Spell Cards** - Link monsters to spell database
+   - Let DMs see what spells monster can cast
+   - Generate spell card printouts
+
+2. **Better User Protection**
+   - Add email verification on registration
+   - Implement CAPTCHA to prevent bot attacks
+   - Add rate limiting to login attempts
+
+3. **Collection Improvements**
+   - Add description/notes to collections
+   - Add collaborators (share editing permission)
+   - Add export to PDF (all monsters in collection)
+
+4. **Print Optimization**
+   - Test on various printers
+   - Optimize colors for black & white printing
+   - Add print margin/spacing options
+
+### Medium Term (1 month)
+
+5. **Mobile Optimization**
+   - Responsive design for phone/tablet
+   - Touch-friendly button sizes
+   - Native app wrapper (progressive web app)
+
+6. **Search & Filtering**
+   - Search by name
+   - Filter by size, type, CR, abilities
+   - Full-text search on descriptions
+
+7. **Encounter Builder**
+   - Combine multiple monsters for encounters
+   - Calculate total XP difficulty
+   - Suggest adjustments (add more monsters, scale HP)
+
+### Long Term (ongoing)
+
+8. **Community Features**
+   - User profiles and follower system
+   - Comments/reviews on public monsters
+   - Trending monsters (most liked, most used)
+
+9. **Admin Dashboard**
+   - Moderation tools
+   - Usage statistics
+   - User management
+
+10. **API for Integrations**
+    - RESTful API for third-party apps
+    - OAuth for sign-in with Google/Discord
+    - Webhook notifications
+
+---
+
+## Part 12: Demonstration
+
+### Key Features to Show
+
+1. **Create a Monster**
+   - Walk through form
+   - Show ability modifiers calculating automatically
+   - Show image upload
+   - Save and view the created monster
+
+2. **Public Browse**
+   - Show filtering and pagination
+   - Click heart to like (AJAX without reload)
+   - Show like counter updating
+
+3. **Collections**
+   - Create a collection
+   - Add monsters to it (AJAX dropdown)
+   - Share via token
+   - Show public view works
+
+4. **Print Cards**
+   - Generate PDF of playing card size
+   - Generate boss card PDF
+   - Show how they look when printed
+
+5. **User Account**
+   - Show registration validation
+   - Show login
+   - Show profile/avatar upload
 
 ---
 
 ## Conclusion
 
-This project demonstrates:
+Monster Maker demonstrates:
 
-✅ **Proper MVC separation** - Clear boundaries between layers  
-✅ **Database security** - Prepared statements, password hashing  
-✅ **Form validation** - Server-side only, comprehensive checks  
+✅ **Full MVC Architecture** - Clear separation of concerns  
+✅ **Database Design** - Relationships, constraints, indexing  
+✅ **Security Practices** - Prepared statements, password hashing, XSS prevention  
+✅ **User Authentication** - Registration, login, session management  
+✅ **CRUD Operations** - Create, Read, Update, Delete with validation  
+✅ **File Handling** - Secure image uploads with validation  
+✅ **AJAX & JSON** - Dynamic interactions without page reload  
+✅ **Print Optimization** - Multiple printable card formats with CSS  
+✅ **Data Persistence** - Collections, likes, user preferences  
 ✅ **Authorization** - User ownership verification  
-✅ **Clean code** - Readable, well-commented, maintainable  
-✅ **Real-world patterns** - Used in production applications  
 
-The application is **production-ready** and easily extensible for new features.
+**Technologies:** PHP 8.4, MySQL 8.0, Bootstrap 5.3, JavaScript (fetch API), Docker
+
+**Production Readiness:** Code is clean, well-commented, secure, and extensible for future features.

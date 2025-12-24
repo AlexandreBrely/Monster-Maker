@@ -1,35 +1,108 @@
 /* ===== SMALL MONSTER STATBLOCK STYLES ===== */
 
-/* LAYOUT: Container that holds both the FRONT CARD (.statblock) and BACK CARD (.card-back) side-by-side */
+/*
+ * PLAYING CARD FORMAT - Portrait Orientation
+ * ============================================
+ * 
+ * DIMENSIONS: 2.5" × 3.5" (63mm × 88mm) - Standard playing card size
+ * PURPOSE: Compact monster stats for easy reference during gameplay
+ * 
+ * STRUCTURE:
+ *   .card-display-wrapper               // Container for front + back
+ *     ├─ .statblock                      // FRONT: Stats and abilities
+ *     │   ├─ .statblock-header           // Name, type, CR
+ *     │   ├─ .statblock-top              // Core stats section
+ *     │   │   ├─ .basic-stats            // Primary stats bar
+ *     │   │   ├─ .ability-grid           // 6 ability scores
+ *     │   │   └─ .skills-secondary       // Skills, senses, etc.
+ *     │   └─ .statblock-body             // Actions, reactions
+ *     └─ .card-back                      // BACK: Monster image
+ * 
+ * LAYOUT STRATEGY:
+ * - Fixed dimensions prevent overflow issues
+ * - Flex column for vertical stacking
+ * - Tight spacing to maximize content density
+ * - Smart font sizing for readability vs. space
+ * 
+ * PRINT OPTIMIZATION:
+ * - 3px border for durability (thick enough to handle)
+ * - 6px padding protects content when trimming
+ * - 4px margin creates safe cut area
+ * - White background for standard paper printing
+ */
+
+/* === CONTAINER: FRONT + BACK CARD WRAPPER === */
+
+/*
+ * Flexbox container displaying front and back cards side-by-side
+ * LAYOUT: Horizontal flex with centered alignment
+ * GAP: 30px provides clear visual separation
+ * RESPONSIVE: Stack vertically on mobile (handled elsewhere)
+ */
 .card-display-wrapper {
     display: flex;
-    gap: 30px;              /* Clear gap between front and back cards */
-    align-items: flex-start;
-    justify-content: center;
+    gap: 30px;                       /* 30px space between front and back */
+    align-items: flex-start;         /* Align to top */
+    justify-content: center;         /* Center horizontally */
     margin: 0 auto;
     padding: 0 20px;
     max-width: 100%;
 }
 
-/* CARD BACK: The right-side card showing the monster full body image */
+/* === BACK CARD: MONSTER IMAGE === */
+
+/*
+ * Right-side card displaying monster's full-body portrait
+ * 
+ * DIMENSIONS: 2.5" × 3.5" (matches front card)
+ * PURPOSE: Visual reference for monster appearance
+ * 
+ * IMAGE HANDLING:
+ * - object-fit: cover - Crops image to fill card while maintaining aspect
+ * - object-position: center - Centers the image within crop area
+ * - Prioritizes keeping monster's head/torso visible
+ * 
+ * FALLBACK: Shows icon placeholder if no image uploaded
+ */
 .card-back {
     background: #fff;
-    border: 3px solid #c8c8c8;  /* Match front card border */
-    border-radius: 2px;         /* Match front card corner radius */
-    width: 2.5in;    /* Playing card width  63 mm*/
-    height: 3.5in;   /* Playing card height 88 mm*/
+    border: 1px solid #000000;       /* Outer cut guide */
+    border-radius: 8px;              /* Softer rounded corners */
+    width: 2.5in;                    /* Playing card width (63mm) */
+    height: 3.5in;                   /* Playing card height (88mm) */
     display: inline-flex;
     flex-direction: column;
     vertical-align: top;
-    overflow: hidden;
+    overflow: hidden;                /* Crop images exceeding dimensions */
     position: relative;
-    box-shadow: none;          /* Match front card (no shadow) */
-    padding: 6px;              /* Match front card inner padding */
-    margin: 4px;               /* Match front card outer margin */
+    box-shadow: none;                /* Match front card (no shadow) */
+    padding: 6px;                    /* Match front card padding */
+    margin: 4px;                     /* Match front card margin */
+    box-sizing: border-box;          /* Include border in dimensions */
+}
+
+.card-back::before {
+    content: "";
+    position: absolute;
+    inset: 2px;                      /* 1px border + 1px gap */
+    border: 1px solid #000000;       /* Inner cut guide */
+    border-radius: 6px;
+    pointer-events: none;
     box-sizing: border-box;
 }
 
-/* Full body image inside the back card - smart cropping to fit portrait orientation */
+/*
+ * Monster portrait image inside back card
+ * CROPPING STRATEGY:
+ * - object-fit: cover - Fills entire card area
+ * - object-position: center center - Centers the crop
+ * - Alternative: 'center top' prioritizes head/face
+ * 
+ * ASPECT RATIO HANDLING:
+ * - Wide images: Crops left/right edges
+ * - Tall images: Crops top/bottom edges
+ * - Square images: Crops to fit portrait orientation
+ */
 .card-back-image {
     width: 100%;
     height: 100%;
@@ -49,12 +122,36 @@
     font-size: 3.05rem;
 }
 
-/* ===== FRONT CARD: Small monster statblock container ===== */
+/* === FRONT CARD: MONSTER STATBLOCK === */
+
+/*
+ * Main statblock container - Playing card dimensions
+ * 
+ * DIMENSIONS: 2.5" × 3.5" (63mm × 88mm)
+ * STANDARD: Same size as poker/bridge playing cards
+ * 
+ * SPACE OPTIMIZATION:
+ * - Small font sizes (0.70rem base)
+ * - Tight padding (6px)
+ * - Zero margins on internal elements
+ * - Flex column layout for efficient stacking
+ * 
+ * PRINT CONSIDERATIONS:
+ * - 3px border: Thick enough for durability
+ * - 6px padding: Protects content during trimming
+ * - 4px margin: Safe cutting area
+ * - box-sizing: border-box ensures exact dimensions
+ * 
+ * OVERFLOW HANDLING:
+ * - overflow: hidden prevents content escape
+ * - Fixed height enforces dimension constraints
+ * - Designer must ensure content fits (or use smaller fonts)
+ */
 .small-statblock,
 .statblock {
     background: #fff;
-    border: 3px solid #c8c8c8;  /* Light grey border, thicker for durability */
-    border-radius: 2px;
+    border: 1px solid #000000;    /* Outer cut guide */
+    border-radius: 8px;
     padding: 6px;      /* Inner padding to protect content when trimming/handling */
     width: 2.5in;    /* Playing card width  63 mm*/
     height: 3.5in;   /* Playing card height 88 mm*/
@@ -67,13 +164,19 @@
     flex-direction: column;
     vertical-align: top;
     box-sizing: border-box;
+    position: relative;
 }
 
-/* Compact mode placeholder (kept for future use) */
-.small-statblock.compact,
-.statblock.compact {
-        overflow: visible;
-    }
+.small-statblock::before,
+.statblock::before {
+    content: "";
+    position: absolute;
+    inset: 2px;                      /* 1px border + 1px gap */
+    border: 1px solid #000000;       /* Inner cut guide */
+    border-radius: 6px;
+    pointer-events: none;
+    box-sizing: border-box;
+}
 
 /* Override natural element margins for compact display */
 .statblock p, .statblock h3, .statblock h6 {
@@ -230,8 +333,27 @@
     margin-right: 0;
 }
 
-/* ===== ABILITY SCORE GRID: STR / DEX / CON / INT / WIS / CHA ===== */
-/* 6-column grid showing ability names and modifiers */
+/* === ABILITY SCORE GRID === */
+
+/*
+ * 6-column grid displaying D&D 5e ability scores
+ * 
+ * LAYOUT: Equal-width columns for STR, DEX, CON, INT, WIS, CHA
+ * DISPLAY FORMAT:
+ *   STR  DEX  CON  INT  WIS  CHA
+ *   +2   +3   +1   -1   +0   +4
+ * 
+ * SAVE BONUS INDICATOR:
+ * When monster has saving throw proficiency, shows as: +2 /+5
+ * - First number: Ability modifier (always shown)
+ * - Second number: Total save bonus (modifier + proficiency)
+ * - Gray color differentiates save bonus from modifier
+ * 
+ * SPACING:
+ * - 1px gap: Minimal space, maximum density
+ * - Center-aligned: Clean, organized appearance
+ * - Stacked vertically: Label above value
+ */
 .ability-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -270,8 +392,31 @@
     vertical-align: baseline;
 }
 
-/* ===== DETAILS SECTION: Skills, Senses, Immunities, Resistances, Vulnerabilities ===== */
-/* Container for all detail items (Skills, Immunities, etc.) */
+/* === DETAILS SECTION === */
+
+/*
+ * Secondary information displayed in compact rows
+ * 
+ * CONTENT TYPES:
+ * - Skills: Proficiency and expertise bonuses
+ * - Senses: Darkvision, blindsight, passive Perception
+ * - Damage Immunities: Complete damage negation
+ * - Damage Resistances: Half damage
+ * - Damage Vulnerabilities: Double damage
+ * - Condition Immunities: Status effect immunities
+ * - Languages: Communication capabilities
+ * 
+ * LAYOUT STRATEGY:
+ * - Label: Bold, slightly larger (0.47rem)
+ * - Value: Normal weight, smaller (0.37rem)
+ * - No gaps: Maximize content density
+ * - Ultra-tight line-height (1.05): Fit more rows
+ * 
+ * TYPOGRAPHY HIERARCHY:
+ * - Labels stand out with bold weight
+ * - Values are readable but compact
+ * - Different sizes create visual separation
+ */
 .statblock-details {
     display: flex;
     flex-direction: column;
@@ -415,7 +560,6 @@
 
     /* Card dimensions and print-specific styling */
     .statblock,
-    .statblock.compact,
     .card-back {
         border: 1px solid #999;
         box-shadow: none;

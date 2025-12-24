@@ -104,6 +104,20 @@ class CollectionController
         $collection = $this->collectionModel->getById($collectionId);
         $monsters = $this->collectionModel->getMonsters($collectionId);
         
+        // Get all user's collections for the add-to-collection dropdown in mini cards
+        $userCollections = $this->collectionModel->getByUser($_SESSION['user']['u_id']);
+        
+        // Get like data for current user
+        $userLikes = [];
+        if (!empty($monsters)) {
+            $monsterIds = array_column($monsters, 'monster_id');
+            $likeModel = new \App\Models\MonsterLike();
+            $userLikes = $likeModel->getUserLikes($_SESSION['user']['u_id'], $monsterIds);
+        }
+        
+        // Add CSS for monster card mini template
+        $extraStyles = ['/css/monster-card-mini.css'];
+        
         require_once __DIR__ . '/../views/collection/view.php';
     }
 
@@ -249,7 +263,7 @@ class CollectionController
     /**
      * Add a monster to a collection (AJAX endpoint).
      * Returns JSON; no page reload. Validates ownership before inserting.
-     */
+     *
      * 2. JavaScript sends request in background (fetch())
      * 3. Server processes request
      * 4. Server returns JSON: { "success": true, "message": "Added!" }
@@ -305,11 +319,22 @@ class CollectionController
             exit;
         }
         
-        // Verify monster exists in database
-        // Prevents: Adding non-existent monster (monster_id=999999)
+        // IMPROVED: Verify monster is PUBLIC or owned by user
+        // This allows adding any public monster to collections
+        // But still prevents adding private monsters owned by others
         $monster = $this->monsterModel->getById($monsterId);
         if (!$monster) {
             echo json_encode(['success' => false, 'message' => 'Monster not found']);
+            exit;
+        }
+        
+        // Check if monster is public OR owned by current user
+        $userId = $_SESSION['user']['u_id'];
+        $isOwner = ($monster['u_id'] == $userId);
+        $isPublic = ($monster['is_public'] == 1);
+        
+        if (!$isPublic && !$isOwner) {
+            echo json_encode(['success' => false, 'message' => 'Monster is private and belongs to another user']);
             exit;
         }
         
@@ -365,5 +390,461 @@ class CollectionController
             echo json_encode(['success' => false, 'message' => 'Failed to remove monster']);
         }
         exit;
+    }
+
+    /**
+     * API METHOD: Get user's collections (JSON response)
+     * 
+     * MVC-compliant API endpoint that returns user's collections as JSON.
+     * Called from /api/get-collections.php for AJAX dropdown population.
+     * 
+     * RETURNS: JSON with structure:
+     * {
+     *   "success": true,
+     *   "collections": [
+     *     {
+     *       "collection_id": 1,
+     *       "collection_name": "To Print",
+     *       "description": "...",
+     *       "is_default": 1,
+     *       "monster_count": 5
+     *     },
+     *     ...
+     *   ]
+     * }
+     * 
+     * AUTHENTICATION: User must be logged in (verified by API file)
+     * AUTHORIZATION: Returns only collections owned by authenticated user
+     */
+    public function getCollectionsApi()
+    {
+        // Set JSON response header
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            $userId = $_SESSION['user']['u_id'];
+            
+            // Fetch all collections for the authenticated user
+            // Model handles database query and returns array
+            $collections = $this->collectionModel->getByUser($userId);
+            
+            // Return success response with collections data
+            echo json_encode([
+                'success' => true,
+                'collections' => $collections
+            ]);
+            
+        } catch (\Exception $e) {
+            // Handle any unexpected errors gracefully
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error loading collections: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit; // Prevent any view rendering
+    }
+
+    /**
+     * API METHOD: Add monster to collection (JSON response)
+     * 
+     * MVC-compliant API endpoint for adding monsters to collections.
+     * Called from /api/add-to-collection.php for AJAX operations.
+     * 
+     * INPUT: $input array with:
+     * - monster_id (int): Monster to add
+     * - collection_id (int): Collection to add to
+     * 
+     * RETURNS: JSON with structure:
+     * {
+     *   "success": true|false,
+     *   "message": "Success/error message"
+     * }
+     * 
+     * VALIDATION:
+     * - User must own the monster
+     * - User must own the collection
+     * - Monster must exist
+     * - Collection must exist
+     * - Prevents duplicate entries
+     */
+    public function addMonsterApi(array $input)
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            $monsterId = (int)$input['monster_id'];
+            $collectionId = (int)$input['collection_id'];
+            $userId = $_SESSION['user']['u_id'];
+            
+            // SECURITY CHECK 1: Verify monster exists
+            $monster = $this->monsterModel->getById($monsterId);
+            if (!$monster) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Monster not found.'
+                ]);
+                exit;
+            }
+            
+            // IMPROVED: Check if monster is PUBLIC or owned by user
+            // This allows adding any public monster to collections
+            $isOwner = ($monster['u_id'] == $userId);
+            $isPublic = ($monster['is_public'] == 1);
+            
+            if (!$isPublic && !$isOwner) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Monster is private and belongs to another user.'
+                ]);
+                exit;
+            }
+            
+            // SECURITY CHECK 2: Verify collection exists and belongs to user
+            if (!$this->verifyOwnership($collectionId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Collection not found or you do not have permission to access it.'
+                ]);
+                exit;
+            }
+            
+            // Attempt to add monster to collection
+            // Model handles duplicate prevention via UNIQUE constraint
+            if ($this->collectionModel->addMonster($collectionId, $monsterId)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Monster added to collection successfully!'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Monster is already in this collection.'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error adding monster to collection: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+
+    /**
+     * API METHOD: Create collection and add monster (JSON response)
+     * 
+     * Combines two operations for better UX: creates a new collection
+     * and immediately adds a monster to it in a single API call.
+     * 
+     * INPUT: $input array with:
+     * - monster_id (int): Monster to add
+     * - collection_name (string): Name for new collection
+     * - description (string, optional): Collection description
+     * 
+     * RETURNS: JSON with structure:
+     * {
+     *   "success": true|false,
+     *   "message": "Success/error message",
+     *   "collection_id": 123 (on success only)
+     * }
+     * 
+     * VALIDATION:
+     * - Collection name cannot be empty
+     * - Collection name max 100 characters
+     * - User must own the monster
+     * - Collection name must be unique for user
+     * - Handles database errors gracefully
+     */
+    public function createCollectionAndAddMonsterApi(array $input)
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            $monsterId = (int)$input['monster_id'];
+            $collectionName = trim($input['collection_name']);
+            $description = isset($input['description']) ? trim($input['description']) : null;
+            $userId = $_SESSION['user']['u_id'];
+            
+            // VALIDATION 1: Collection name cannot be empty
+            if (empty($collectionName)) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Collection name cannot be empty.'
+                ]);
+                exit;
+            }
+            
+            // VALIDATION 2: Collection name length limit
+            if (strlen($collectionName) > 100) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Collection name must be 100 characters or less.'
+                ]);
+                exit;
+            }
+            
+            // SECURITY CHECK: Verify monster exists and belongs to user
+            $monster = $this->monsterModel->getById($monsterId);
+            if (!$monster || $monster['u_id'] != $userId) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Monster not found or you do not have permission to access it.'
+                ]);
+                exit;
+            }
+            
+            // STEP 1: Create new collection
+            // Returns false if collection name already exists for this user
+            $newCollectionId = $this->collectionModel->create($userId, $collectionName, $description);
+            
+            if ($newCollectionId === false) {
+                http_response_code(409); // 409 Conflict
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Collection '{$collectionName}' already exists. Please choose a different name."
+                ]);
+                exit;
+            }
+            
+            // STEP 2: Add monster to newly created collection
+            $added = $this->collectionModel->addMonster($newCollectionId, $monsterId);
+            
+            if ($added) {
+                // SUCCESS: Both operations completed
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Collection '{$collectionName}' created and '{$monster['name']}' added!",
+                    'collection_id' => $newCollectionId
+                ]);
+            } else {
+                // PARTIAL FAILURE: Collection created but monster not added
+                // This is rare but can happen if database connection fails between operations
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Collection created but failed to add monster. Please try again.'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            // Handle unexpected errors
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error creating collection: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+
+    /**
+     * Generate a shareable link for a collection
+     * 
+     * Creates a unique token that allows anyone with the link to view the collection
+     * without authentication. This is useful for sharing collections on social media,
+     * Discord, Reddit, etc.
+     * 
+     * Only the collection owner can generate a share link.
+     * 
+     * POST /collection-share
+     * Body: { collection_id: int }
+     * Returns: JSON { success: bool, token: string, share_url: string, message: string }
+     */
+    public function shareCollection(array $input)
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            $collectionId = (int)$input['collection_id'] ?? null;
+            
+            if (!$collectionId) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Collection ID is required.'
+                ]);
+                exit;
+            }
+            
+            // SECURITY: Verify user owns this collection
+            if (!$this->verifyOwnership($collectionId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'You do not have permission to share this collection.'
+                ]);
+                exit;
+            }
+            
+            // Generate new share token
+            $token = $this->collectionModel->generateShareToken($collectionId);
+            
+            if ($token) {
+                // Build shareable URL (adjust based on your domain)
+                // Format: https://yourdomain.com/?url=collection-public&token=TOKEN
+                $baseUrl = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
+                $shareUrl = $baseUrl . '/?url=collection-public&token=' . $token;
+                
+                echo json_encode([
+                    'success' => true,
+                    'token' => $token,
+                    'share_url' => $shareUrl,
+                    'message' => 'Share link generated successfully!'
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to generate share token.'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error generating share link: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+
+    /**
+     * Revoke a collection's share link
+     * 
+     * Removes the share token, making the collection private again.
+     * Only the owner can revoke the share.
+     * 
+     * POST /collection-unshare
+     * Body: { collection_id: int }
+     * Returns: JSON { success: bool, message: string }
+     */
+    public function unshareCollection(array $input)
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            $collectionId = (int)$input['collection_id'] ?? null;
+            
+            if (!$collectionId) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Collection ID is required.'
+                ]);
+                exit;
+            }
+            
+            // SECURITY: Verify user owns this collection
+            if (!$this->verifyOwnership($collectionId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'You do not have permission to unshare this collection.'
+                ]);
+                exit;
+            }
+            
+            // Revoke share token (sets to NULL in database)
+            if ($this->collectionModel->revokeShareToken($collectionId)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Collection is no longer shared.'
+                ]);
+            } else {
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to revoke share token.'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error unsharing collection: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+
+    /**
+     * View a shared collection via token (public, no authentication required)
+     * 
+     * Displays a read-only view of a collection if a valid share token is provided.
+     * This allows anyone with the link to view the collection without logging in.
+     * 
+     * Query Parameter: ?token=SHARETOKEN
+     * Returns: HTML view of collection with monsters
+     */
+    public function viewPublic()
+    {
+        // Get token from URL parameter
+        $token = $_GET['token'] ?? null;
+        
+        if (!$token) {
+            // No token provided, show error
+            $error = 'Share token is required to view this collection.';
+            require dirname(__DIR__) . '/views/pages/error-403.php';
+            return;
+        }
+        
+        try {
+            // Retrieve collection by share token
+            $collection = $this->collectionModel->getByShareToken($token);
+            
+            if (!$collection) {
+                // Invalid or expired token
+                http_response_code(404);
+                $error = 'Collection not found. The share link may have expired.';
+                require dirname(__DIR__) . '/views/pages/error-404.php';
+                return;
+            }
+            
+            // Get collection creator info
+            $userModel = new \App\Models\User();
+            $creator = $userModel->findById($collection['user_id']);
+            
+            // Retrieve monsters in this collection
+            $monsters = $this->collectionModel->getMonsters($collection['id']);
+            
+        // Fetch user likes for persistence (if user is logged in)
+        $userLikes = [];
+        if (isset($_SESSION['user'])) {
+            $userId = $_SESSION['user']['u_id'];
+            $likeModel = new \App\Models\MonsterLike();
+            $monsterIds = array_column($monsters, 'monster_id');
+            if (!empty($monsterIds)) {
+                $userLikes = $likeModel->getUserLikes($userId, $monsterIds);
+            }
+        }
+        
+            // Add CSS for monster card mini template
+            $extraStyles = ['/css/monster-card-mini.css'];
+            
+            // Load public collection view
+            // This is a read-only template that doesn't show edit/delete buttons
+            require dirname(__DIR__) . '/views/collection/public-view.php';
+            
+        } catch (\Exception $e) {
+            http_response_code(500);
+            $error = 'Error loading shared collection: ' . $e->getMessage();
+            require dirname(__DIR__) . '/views/pages/error-403.php';
+        }
     }
 }

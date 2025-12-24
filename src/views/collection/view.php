@@ -37,6 +37,20 @@
                         <i class="bi bi-pencil"></i> Edit
                     </a>
                 <?php endif; ?>
+                
+                <!-- Share/Unshare Button -->
+                <?php 
+                    $hasShareToken = !empty($collection['share_token']);
+                    $shareButtonClass = $hasShareToken ? 'btn-warning' : 'btn-outline-success';
+                    $shareButtonText = $hasShareToken ? '<i class="bi bi-link-45deg"></i> Sharing' : '<i class="bi bi-share"></i> Share';
+                ?>
+                <button type="button" 
+                        class="btn <?= $shareButtonClass ?>"
+                        onclick="toggleShareCollection(<?= $collection['collection_id'] ?>)"
+                        title="<?= $hasShareToken ? 'Stop sharing' : 'Share via link' ?>">
+                    <?= $shareButtonText ?>
+                </button>
+                
                 <a href="index.php?url=collections" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Collections
                 </a>
@@ -61,45 +75,20 @@
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 <?php foreach ($monsters as $monster): ?>
                     <div class="col">
-                        <div class="card h-100 shadow-sm monster-card">
-                            <?php if (!empty($monster['image_path'])): ?>
-                                <img src="public/uploads/monsters/<?= htmlspecialchars($monster['image_path']) ?>" 
-                                     class="card-img-top" 
-                                     alt="<?= htmlspecialchars($monster['name']) ?>"
-                                     style="height: 200px; object-fit: cover;">
-                            <?php endif; ?>
-                            
-                            <div class="card-body">
-                                <h5 class="card-title"><?= htmlspecialchars($monster['name']) ?></h5>
-                                <p class="card-text">
-                                    <small class="text-muted">
-                                        <?= htmlspecialchars($monster['size']) ?> 
-                                        <?= htmlspecialchars($monster['type']) ?>
-                                        <?= !empty($monster['subtype']) ? '(' . htmlspecialchars($monster['subtype']) . ')' : '' ?>
-                                        <br>
-                                        <strong>CR:</strong> <?= htmlspecialchars($monster['challenge_rating']) ?>
-                                    </small>
-                                </p>
-                                
-                                <div class="d-flex gap-2">
-                                    <a href="index.php?url=monster&action=show&id=<?= $monster['monster_id'] ?>" 
-                                       class="btn btn-sm btn-outline-primary flex-fill">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-                                    
-                                    <button type="button" 
-                                            class="btn btn-sm btn-outline-danger remove-monster-btn"
-                                            data-monster-id="<?= $monster['monster_id'] ?>"
-                                            data-monster-name="<?= htmlspecialchars($monster['name']) ?>">
-                                        <i class="bi bi-x-circle"></i> Remove
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="card-footer text-muted small">
-                                Added <?= date('M j, Y', strtotime($monster['added_at'])) ?>
-                            </div>
-                        </div>
+                        <?php 
+                        // Check if current user has liked this monster
+                        $isLiked = in_array($monster['monster_id'], $userLikes ?? []);
+                        include dirname(__DIR__) . '/templates/monster-card-mini.php'; 
+                        ?>
+                        
+                        <!-- Remove Button Overlay for Collection View -->
+                        <button type="button" 
+                                class="btn btn-sm btn-danger mt-2 w-100 remove-monster-btn"
+                                data-monster-id="<?= $monster['monster_id'] ?>"
+                                data-monster-name="<?= htmlspecialchars($monster['name']) ?>"
+                                title="Remove from collection">
+                            <i class="bi bi-x-circle"></i> Remove from Collection
+                        </button>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -107,7 +96,173 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Share Link Modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share Collection</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="shareContent" style="display: none;">
+                        <p>Your collection can be shared via this link:</p>
+                        <div class="input-group mb-3">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="shareLink" 
+                                   readonly>
+                            <button class="btn btn-outline-secondary" 
+                                    type="button" 
+                                    onclick="copyShareLink()">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <p class="small text-muted">
+                            Share this link on Reddit, Discord, or any platform! Anyone with the link can view your collection.
+                        </p>
+                    </div>
+                    <div id="loadingContent">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="ms-2">Generating share link...</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <?php if ($hasShareToken): ?>
+                        <button type="button" class="btn btn-danger" onclick="unshareCollection(<?= $collection['collection_id'] ?>)">
+                            <i class="bi bi-x-circle"></i> Stop Sharing
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        /**
+         * Toggle collection sharing (share/unshare)
+         * 
+         * If collection has share token: Show share link modal
+         * If collection doesn't have token: Generate one and show modal
+         * 
+         * @param {number} collectionId - The collection ID
+         */
+        async function toggleShareCollection(collectionId) {
+            const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+            const shareContent = document.getElementById('shareContent');
+            const loadingContent = document.getElementById('loadingContent');
+            
+            // Show modal
+            modal.show();
+            
+            // Check if already has share token
+            <?php if ($hasShareToken): ?>
+                // Already shared - show link immediately
+                const shareUrl = '<?php 
+                    $baseUrl = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
+                    echo $baseUrl . '/?url=collection-public&token=' . htmlspecialchars($collection['share_token']);
+                ?>';
+                document.getElementById('shareLink').value = shareUrl;
+                
+                loadingContent.style.display = 'none';
+                shareContent.style.display = 'block';
+            <?php else: ?>
+                // Not shared yet - generate token
+                try {
+                    const response = await fetch('index.php?url=collection-share', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `collection_id=${collectionId}`
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.getElementById('shareLink').value = result.share_url;
+                        loadingContent.style.display = 'none';
+                        shareContent.style.display = 'block';
+                    } else {
+                        alert(result.message || 'Failed to generate share link');
+                        modal.hide();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                    modal.hide();
+                }
+            <?php endif; ?>
+        }
+        
+        /**
+         * Copy share link to clipboard with visual feedback
+         * 
+         * Uses modern Clipboard API with fallback messaging
+         * Shows temporary success message to user
+         */
+        function copyShareLink() {
+            const shareLink = document.getElementById('shareLink');
+            
+            navigator.clipboard.writeText(shareLink.value).then(() => {
+                // Show success feedback
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+                
+                button.innerHTML = '<i class="bi bi-check-circle"></i> Copied!';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-outline-secondary');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-secondary');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy link. Please copy manually.');
+            });
+        }
+        
+        /**
+         * Stop sharing collection by revoking share token
+         * 
+         * After confirmation, removes share token and reloads page
+         * 
+         * @param {number} collectionId - The collection ID
+         */
+        async function unshareCollection(collectionId) {
+            if (!confirm('Stop sharing this collection? The share link will no longer work.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('index.php?url=collection-unshare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `collection_id=${collectionId}`
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to stop sharing');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+        
         // Remove monster from collection
         document.querySelectorAll('.remove-monster-btn').forEach(button => {
             button.addEventListener('click', async function() {

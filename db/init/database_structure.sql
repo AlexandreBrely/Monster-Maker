@@ -110,18 +110,21 @@ CREATE TABLE IF NOT EXISTS monster_likes (
 -- Stores user-created collections for organizing monsters and lairs
 -- Each user has a default "To Print" collection created automatically
 -- Users can create custom collections for organizing content (e.g., "Goblin Patrol", "Kobold Encounter")
+-- share_token: 32-character hex token for shareable public links (NULL = not shared)
 CREATE TABLE IF NOT EXISTS collections (
     collection_id INT PRIMARY KEY AUTO_INCREMENT,
     u_id INT NOT NULL,
     collection_name VARCHAR(100) NOT NULL,
     description TEXT,
     is_default BOOLEAN DEFAULT 0,
+    share_token VARCHAR(32) NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (u_id) REFERENCES users(u_id) ON DELETE CASCADE,
     UNIQUE KEY unique_collection_name (u_id, collection_name),
     INDEX idx_collection_user (u_id),
-    INDEX idx_collection_default (is_default)
+    INDEX idx_collection_default (is_default),
+    INDEX idx_collections_share_token (share_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===== COLLECTION MONSTERS TABLE =====

@@ -25,7 +25,11 @@ require_once ROOT . '/src/views/templates/navbar.php';
                     <div class="d-flex justify-content-center mb-3">
                         <?php if (!empty($randomSmall)): ?>
                             <div style="max-width: 320px;">
-                                <?php $monster = $randomSmall; require ROOT . '/src/views/templates/monster-card-mini.php'; ?>
+                                <?php 
+                                    $monster = $randomSmall; 
+                                    $isLiked = in_array($monster['monster_id'], $userLikes ?? []);
+                                    require ROOT . '/src/views/templates/monster-card-mini.php'; 
+                                ?>
                             </div>
                         <?php else: ?>
                             <div class="bg-light border rounded p-4 text-center" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
@@ -49,7 +53,11 @@ require_once ROOT . '/src/views/templates/navbar.php';
                     <div class="d-flex justify-content-center mb-3">
                         <?php if (!empty($randomBoss)): ?>
                             <div style="max-width: 320px;">
-                                <?php $monster = $randomBoss; require ROOT . '/src/views/templates/monster-card-mini.php'; ?>
+                                <?php 
+                                    $monster = $randomBoss; 
+                                    $isLiked = in_array($monster['monster_id'], $userLikes ?? []);
+                                    require ROOT . '/src/views/templates/monster-card-mini.php'; 
+                                ?>
                             </div>
                         <?php else: ?>
                             <div class="bg-light border rounded p-4 text-center" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">

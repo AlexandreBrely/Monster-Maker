@@ -28,8 +28,14 @@
 <!-- JavaScript: Load shared monster form behaviors before Bootstrap -->
 <script src="/js/monster-form.js"></script> <!-- Form behavior: dynamic sections & ability mods -->
 
+<!-- Monster Actions: Global functions for like, add-to-collection, etc. -->
+<script src="/js/monster-actions.js"></script>
+
 <!-- html2canvas: Library for converting HTML elements to images (used for card downloads) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- jsPDF: Library for PDF generation (using unpkg CDN instead of cdnjs) -->
+<script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
 
 <!-- Card Download: Custom script for downloading monster cards as images -->
 <script src="/js/card-download.js"></script>

@@ -1,5 +1,31 @@
 /*
- * Monster Maker - Form styling for dynamic sections
+ * MONSTER MAKER - DYNAMIC FORM STYLING
+ * =====================================
+ * 
+ * PURPOSE:
+ * Styles for the monster creation form with color-coded sections.
+ * Each ability type has a distinct color for visual organization.
+ * 
+ * COLOR CODING SYSTEM:
+ * This color palette helps users quickly identify section types:
+ * - Actions (Light Blue #4A90E2): Standard combat actions
+ * - Bonus Actions (Dark Blue #1E3A8A): Swift bonus action abilities
+ * - Reactions (Royal Purple #6B46C1): Triggered defensive abilities
+ * - Traits (Bloody Red #DC143C): Passive abilities and features
+ * - Legendary Actions (Gold #FFD700): Special legendary creature actions
+ * - Lair Actions (Forest Green #228B22): Environment-based lair actions
+ * 
+ * DESIGN PHILOSOPHY:
+ * - Clear visual hierarchy through color
+ * - Consistent styling across all dynamic sections
+ * - Easy identification during form creation
+ * - Matches D&D 5e ability categories
+ * 
+ * USAGE:
+ * Applied to card headers in monster creation/edit forms.
+ * JavaScript dynamically adds/removes sections with these classes.
+ * See: /js/monster-form.js for dynamic functionality
+ * 
  * Color palette:
  * - Actions: Light Blue (#4A90E2)
  * - Bonus Actions: Dark Blue (#1E3A8A)
@@ -9,7 +35,13 @@
  * - Lair Actions: Forest Green (#228B22)
  */
 
-/* ========== Section header color codes ========== */
+/* === COLOR-CODED SECTION HEADERS === */
+
+/*
+ * Base classes for section header backgrounds
+ * Applied to card headers in the monster form
+ * White text provides contrast on colored backgrounds (except gold)
+ */
 .color-code-action {
     background-color: #4A90E2;
     color: #fff;
@@ -31,16 +63,22 @@
 }
 
 .color-code-legendary {
-    background-color: #FFD700;
-    color: #1f2933;
+    background-color: #FFD700;       /* Gold */
+    color: #1f2933;                  /* Dark text for contrast on light gold */
 }
 
 .color-code-lair {
-    background-color: #228B22;
+    background-color: #228B22;       /* Forest Green */
     color: #fff;
 }
 
-/* ========== Button styles for colored sections ========== */
+/* === BUTTON STYLING FOR COLORED SECTIONS === */
+
+/*
+ * Buttons inside colored section headers
+ * Inherit color from parent for consistent theming
+ * Applied to collapse/expand and delete buttons
+ */
 .section-header-button {
     border-radius: 6px;
     padding: 8px 10px;
@@ -48,20 +86,31 @@
 
 .section-header-button .btn-outline-secondary,
 .section-header-button .btn-outline-danger {
-    color: inherit;
-    border-color: inherit;
+    color: inherit;                  /* Inherit from parent section color */
+    border-color: inherit;           /* Inherit border color */
 }
 
+/*
+ * Container styling for dynamically added items
+ * Each action/trait/reaction is wrapped in these containers
+ * Border provides visual separation between items
+ */
 .action-item,
 .bonus-action-item,
 .reaction-item,
 .trait-item,
 .legendary-action-item,
 .lair-action-item {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e5e7eb;       /* Light gray border */
 }
 
-/* ========== Dynamic item header bars ========== */
+/* === DYNAMIC ITEM HEADER BARS === */
+
+/*
+ * Header bars for individual dynamic items (actions, traits, etc.)
+ * Each item gets a colored header matching its section type
+ * Contains item title and action buttons (collapse, delete)
+ */
 .action-item .d-flex.justify-content-between,
 .bonus-action-item .d-flex.justify-content-between,
 .reaction-item .d-flex.justify-content-between,
@@ -72,14 +121,24 @@
     padding: 8px 10px;
 }
 
-.action-item .d-flex.justify-content-between { background: #4A90E2; color: #fff; }
-.bonus-action-item .d-flex.justify-content-between { background: #1E3A8A; color: #fff; }
-.reaction-item .d-flex.justify-content-between { background: #6B46C1; color: #fff; }
-.trait-item .d-flex.justify-content-between { background: #DC143C; color: #fff; }
-.legendary-action-item .d-flex.justify-content-between { background: #FFD700; color: #1f2933; }
-.lair-action-item .d-flex.justify-content-between { background: #228B22; color: #fff; }
+.action-item .d-flex.justify-content-between { background: #4A90E2; color: #fff; }         /* Light Blue */
+.bonus-action-item .d-flex.justify-content-between { background: #1E3A8A; color: #fff; }    /* Dark Blue */
+.reaction-item .d-flex.justify-content-between { background: #6B46C1; color: #fff; }       /* Purple */
+.trait-item .d-flex.justify-content-between { background: #DC143C; color: #fff; }          /* Red */
+.legendary-action-item .d-flex.justify-content-between { background: #FFD700; color: #1f2933; } /* Gold */
+.lair-action-item .d-flex.justify-content-between { background: #228B22; color: #fff; }    /* Green */
 
-/* ========== Color legend helpers ========== */
+/* === COLOR LEGEND HELPERS === */
+
+/*
+ * Optional color legend display (if needed on form pages)
+ * Shows all ability colors with labels for reference
+ * 
+ * LAYOUT:
+ * - Flexbox wrap: Adapts to screen width
+ * - Pill-shaped indicators: Rounded with colored squares
+ * - Gap spacing: Clear separation between items
+ */
 .color-legend {
     display: flex;
     flex-wrap: wrap;

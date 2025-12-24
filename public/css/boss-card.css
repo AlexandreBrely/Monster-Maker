@@ -1,47 +1,71 @@
-/* ===== BOSS MONSTER CARD STYLES (Horizontal A6 Format - Two Column Layout) ===== */
 
-/* Horizontal A6 boss card (5.8in × 4.1in) using two-column flow.
-    Focus: print-friendly sizing, clear hierarchy, predictable overflow. */
-
-/* Container for front + back cards */
 .boss-card-display-wrapper {
-    display: flex;              /* Side-by-side layout */
-    gap: 30px;                  /* Space between front and back cards */
-    align-items: flex-start;    /* Align cards to top */
-    justify-content: center;    /* Center the cards horizontally */
+    display: flex;                   /* Flexbox for side-by-side layout */
+    gap: 30px;                       /* 30px space between cards */
+    align-items: flex-start;         /* Align to top (not stretched) */
+    justify-content: center;         /* Center cards horizontally */
     margin: 20px auto;
     padding: 0 20px;
     max-width: 100%;
 }
 
-/* FRONT: Boss monster statblock (A6 landscape: 5.8in × 4.1in) */
+/* === FRONT CARD: BOSS STATBLOCK === */
+
+/*
+ * Main boss card container - A6 landscape format
+ * DIMENSIONS: 5.8" × 4.1" (exact print size)
+ * STYLE: White background with gray border
+ * OVERFLOW: Hidden to prevent content escape
+ * PURPOSE: Display legendary monster stats in readable format
+ */
 .boss-card-front {
     background: #fff;
-    border: 3px solid #c8c8c8;
-    border-radius: 4px;
-    padding: 8px;
-    width: 5.8in;    /* A6 landscape width */
-    height: 4.1in;   /* A6 landscape height */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    box-sizing: border-box;
-    overflow: hidden;
-    font-family: "Nunito", sans-serif;
-    margin: 4px;
+    border: 1px solid #000000;       /* Outer cut guide */
+    border-radius: 8px;              /* Softer rounded corners */
+    padding: 8px;                    /* Inner padding for content protection */
+    width: 5.8in;                    /* A6 landscape width (exact print size) */
+    height: 4.1in;                   /* A6 landscape height (exact print size) */
+    box-shadow: none;                /* Keep print-friendly */
+    box-sizing: border-box;          /* Include border in dimensions */
+    overflow: hidden;                /* Prevent content overflow */
+    font-family: "Nunito", sans-serif;  /* Clean, readable font */
+    margin: 4px;                     /* Outer margin for safe trim area */
+    position: relative;
 }
 
+.boss-card-front::before {
+    content: "";
+    position: absolute;
+    inset: 2px;                      /* 1px border + 1px gap */
+    border: 1px solid #000000;       /* Inner cut guide */
+    border-radius: 6px;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+/*
+ * Inner container using flexbox column layout
+ * Ensures header stays at top, content fills remaining space
+ */
 .boss-card-inner {
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    font-size: 0.65rem;
+    flex-direction: column;          /* Stack header above content */
+    height: 100%;                    /* Fill parent height */
+    font-size: 0.65rem;              /* Base font size for entire card */
 }
 
-/* Header: Monster name, type, CR - now inside column flow */
+/* === HEADER SECTION === */
+
+/*
+ * Card header displaying monster name, type, and challenge rating
+ * LAYOUT: Flexbox with space-between (name left, CR right)
+ * VISUAL: Bottom border separates from main content
+ */
 .boss-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    border-bottom: 2px solid #333;
+    border-bottom: 1px solid #333;
     padding-bottom: 4px;
     margin-bottom: 6px;
     break-inside: avoid;
@@ -72,74 +96,112 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 1.5px solid #8B0000;
+    border: 1px solid #333;
     border-radius: 3px;
     padding: 1.5px 6px;
-    background: #fff8f8;
+    background: #f7f7f7;
 }
 
 .cr-label {
     font-size: 0.4rem;
     font-weight: 500;
-    color: #8B0000;
+    color: #333;
     text-transform: uppercase;
 }
 
 .cr-value {
     font-size: 0.5rem;
     font-weight: 500;
-    color: #8B0000;
+    color: #333;
     line-height: 1;
 }
 
 .cr-xp {
     font-size: 0.4rem;
     font-weight: 500;
-    color: #8B0000;
+    color: #333;
     line-height: 1.1;
 }
 
-/* Content container - uses CSS columns for smooth overflow */
+/* === CONTENT AREA: TWO-COLUMN LAYOUT === */
+
+/*
+ * Main content container that fills remaining space after header
+ * Uses flex: 1 to expand and fill available vertical space
+ * min-height: 0 allows content to shrink if needed
+ */
 .boss-content {
-    flex: 1;
-    min-height: 0;
-    overflow: visible;
+    flex: 1;                         /* Expand to fill available space */
+    min-height: 0;                   /* Allow shrinking below natural height */
+    overflow: visible;               /* Allow column overflow to work */
 }
 
-/* Two-column flowing layout with center split */
+/*
+ * TWO-COLUMN FLOWING LAYOUT
+ * 
+ * COLUMN BEHAVIOR:
+ * - Content flows top-to-bottom in left column first
+ * - When left column fills, content continues in right column
+ * - Visual divider (column-rule) separates columns
+ * 
+ * BREAK CONTROL:
+ * - Sections (.boss-section) can break across columns
+ * - Individual entries (.entry-item) never break
+ * - Keeps actions/traits intact and readable
+ * 
+ * TYPOGRAPHY:
+ * - Smaller font size to fit more content
+ * - Tight line-height for space efficiency
+ */
 .boss-flow {
-    column-count: 2;
-    column-gap: 8px;
-    column-rule: 2px solid #999;
-    column-fill: auto;
-    height: 100%;
-    font-size: 0.48rem;
-    line-height: 1.2;
+    column-count: 2;                 /* Two equal-width columns */
+    column-gap: 8px;                 /* Space between columns */
+    column-rule: 1px solid #999;     /* Vertical divider line */
+    column-fill: auto;               /* Fill columns sequentially */
+    height: 100%;                    /* Fill parent height */
+    font-size: 0.48rem;              /* Smaller text for more content */
+    line-height: 1.2;                /* Compact line spacing */
 }
 
-/* Sections can break across columns for better flow */
+/* Section containers can break across columns naturally */
 .boss-section {
-    margin-bottom: 6px;
+    margin-bottom: 6px;              /* Space between sections */
 }
 
-/* But prevent individual entries from breaking */
+/* Prevent individual action/trait entries from breaking mid-content */
 .entry-item {
-    break-inside: avoid;
+    break-inside: avoid;             /* Keep entry intact */
 }
 
-/* Stats, abilities, and detail lines should not break */
+/* Critical elements must not break across columns */
 .boss-stats-bar,
 .boss-abilities,
 .detail-line {
-    break-inside: avoid;
+    break-inside: avoid;             /* Keep these blocks intact */
 }
 
-/* Quick stats bar - 2x2 Grid Layout (AC | Initiative) (HP | Speed) */
+/* === QUICK STATS BAR === */
+
+/*
+ * Quick reference stats in 2×2 grid layout
+ * 
+ * LAYOUT:
+ *   Row 1: [AC]         [Initiative]
+ *   Row 2: [HP]         [Speed]
+ * 
+ * IMPLEMENTATION:
+ * Uses Bootstrap grid (.row and .col-6) for responsive layout
+ * Each stat is a flex container aligning label with value
+ * 
+ * TYPOGRAPHY:
+ * - Labels: Bold, dark color
+ * - Values: Semi-bold, slightly smaller
+ * - Notes: Smallest, gray (e.g., armor type)
+ */
 .boss-stats-bar {
-    /* Container for Bootstrap grid rows - let grid do the layout */
-    display: block;
+    display: block;                  /* Container for Bootstrap grid */
     gap: 2px;
-    font-size: 0.6rem;
+    font-size: 0.6rem;               /* Base stat text size */
 }
 
 .boss-stat-item {
@@ -236,12 +298,12 @@
 .section-title {
     font-size: 0.52rem;
     font-weight: 500;
-    color: #8B0000;
+    color: #333;
     text-transform: uppercase;
     letter-spacing: 0.2px;
     margin: 2px 0 1px 0;
     padding-bottom: 1px;
-    border-bottom: 1px solid #8B0000;
+    border-bottom: 1px solid #333;
     break-after: avoid;
 }
 
@@ -274,15 +336,26 @@
 /* BACK: Full body image (same A6 landscape dimensions) */
 .boss-card-back {
     background: #fff;
-    border: 3px solid #c8c8c8;
-    border-radius: 4px;
+    border: 1px solid #000000;
+    border-radius: 8px;
     width: 5.8in;
     height: 4.1in;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: none;
     box-sizing: border-box;
     padding: 6px;
     margin: 4px;
+    position: relative;
+}
+
+.boss-card-back::before {
+    content: "";
+    position: absolute;
+    inset: 2px;                      /* 1px border + 1px gap */
+    border: 1px solid #000000;       /* Inner cut guide */
+    border-radius: 6px;
+    pointer-events: none;
+    box-sizing: border-box;
 }
 
 .boss-back-image {
@@ -295,11 +368,11 @@
 .boss-back-placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #4a0000 0%, #8B0000 100%);
+    background: linear-gradient(135deg, #dcdcdc 0%, #f3f3f3 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255,255,255,0.3);
+    color: #999;
     font-size: 4rem;
 }
 
@@ -316,7 +389,7 @@
 
     .boss-card-front,
     .boss-card-back {
-        border: 1px solid #999;
+        border: 1px solid #000;
         box-shadow: none;
         width: 5.8in;
         height: 4.1in;

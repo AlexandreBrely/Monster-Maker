@@ -277,56 +277,100 @@ class MonsterController
         require_once __DIR__ . '/../views/monster/index.php';
     }
     
-    // Toggle like on a monster (AJAX endpoint)
+    /**
+     * Toggle Like - AJAX Endpoint for Like/Unlike Monster
+     * =====================================================
+     * 
+     * WHAT IS AN AJAX ENDPOINT?
+     * Unlike regular PHP pages that return HTML, AJAX endpoints return JSON data.
+     * JavaScript fetch() calls this endpoint, gets JSON response, updates page without reload.
+     * 
+     * HOW IT WORKS (Server-Side):
+     * 
+     * 1. RECEIVE REQUEST: JavaScript sends GET request with monster ID
+     *    URL: index.php?url=monster-like&id=123
+     * 
+     * 2. AUTHENTICATE: Check if user is logged in via $_SESSION
+     *    - If not logged in: Return error JSON
+     * 
+     * 3. VALIDATE: Check monster exists and is accessible
+     *    - Monster must exist in database
+     *    - Monster must be public OR owned by current user
+     *    - If invalid: Return error JSON
+     * 
+     * 4. TOGGLE LIKE: Add or remove like from database
+     *    - MonsterLike->toggleLike() checks if already liked
+     *    - If already liked: DELETE record, return "removed"
+     *    - If not liked: INSERT record, return "added"
+     * 
+     * 5. COUNT LIKES: Get updated total like count
+     *    - MonsterLike->countLikes() runs COUNT(*) query
+     *    - Returns integer (0 or more)
+     * 
+     * 6. SEND RESPONSE: Return JSON with results
+     *    - { success: true, action: "added", count: 5, liked: true }
+     *    - JavaScript receives this and updates UI
+     * 
+     * RELATED CODE:
+     * - Frontend: public/js/monster-actions.js -> toggleLike()
+     * - Model: src/models/MonsterLike.php
+     * - Template: src/views/templates/monster-card-mini.php (like button)
+     */
     public function toggleLike()
     {
+        // STEP 1: Set response type to JSON
+        // Tells browser to expect JSON, not HTML
         header('Content-Type: application/json');
         
-        // Debug logging
-        error_log('toggleLike called. Session user: ' . (isset($_SESSION['user']) ? $_SESSION['user']['u_id'] : 'none'));
-        error_log('Monster ID: ' . ($_GET['id'] ?? 'missing'));
-        
+        // STEP 2: Check authentication
+        // User must be logged in to like monsters
         if (!isset($_SESSION['user'])) {
             echo json_encode(['success' => false, 'error' => 'Not authenticated']);
             return;
         }
         
+        // STEP 3: Get and validate monster ID from URL parameter
         $monsterId = $_GET['id'] ?? null;
         if (!$monsterId) {
             echo json_encode(['success' => false, 'error' => 'Monster ID required']);
             return;
         }
         
+        // Cast to integer for security (prevents SQL injection)
         $userId = $_SESSION['user']['u_id'];
         $monsterId = (int)$monsterId;
         
-        // Verify monster exists and is public (or owned by user)
+        // STEP 4: Verify monster exists and is accessible
         $monster = $this->monsterModel->getById($monsterId);
         if (!$monster) {
             echo json_encode(['success' => false, 'error' => 'Monster not found']);
             return;
         }
         
+        // STEP 5: Check permissions - monster must be public OR owned by user
         if (!$monster['is_public'] && $monster['u_id'] != $userId) {
-            echo json_encode(['success' => false, 'error' => 'Monster not public']);
+            echo json_encode(['success' => false, 'error' => 'Cannot like private monster']);
             return;
         }
         
+        // STEP 6: Toggle the like (add if not liked, remove if already liked)
+        // Returns "added" or "removed" string
         $action = $this->likeModel->toggleLike($userId, $monsterId);
+        
+        // STEP 7: Get updated like count after toggle
         $newCount = $this->likeModel->countLikes($monsterId);
         
-        error_log("Like action: $action, New count: $newCount");
-        
+        // STEP 8: Build response object
         $response = [
             'success' => true,
-            'action' => $action,
-            'count' => $newCount,
-            'liked' => ($action === 'added')
+            'action' => $action,              // "added" or "removed"
+            'count' => $newCount,             // Total like count (integer)
+            'liked' => ($action === 'added')  // Boolean for UI
         ];
         
-        error_log('Response: ' . json_encode($response));
+        // STEP 9: Send JSON response to JavaScript
         echo json_encode($response);
-        exit; // Ensure no extra output
+        exit;
     }
 
     // Affiche le formulaire d'édition
@@ -468,6 +512,14 @@ class MonsterController
         $this->ensureAuthenticated();
         $userId = $_SESSION['user']['u_id'];
         $monsters = $this->monsterModel->getByUser($userId);
+        
+        // Get like data for current user
+        $userLikes = [];
+        if (!empty($monsters)) {
+            $monsterIds = array_column($monsters, 'monster_id');
+            $userLikes = $this->likeModel->getUserLikes($userId, $monsterIds);
+        }
+        
         require_once __DIR__ . '/../views/monster/my-monsters.php';
     }
 
@@ -968,23 +1020,23 @@ class MonsterController
     // Display monster creation type selection page
     public function selectCreate()
     {
-        // Load a couple of random public monsters to preview on the selection page
-        // Use existing model instance to retrieve public monsters
-        $allPublic = $this->monsterModel->getAll();
+        // Load public monsters to preview on the selection page
+        // Use getAllFiltered which deserializes automatically
+        $allPublic = $this->monsterModel->getAllFiltered('newest');
 
         $randomSmall = null;
         $randomBoss = null;
 
         if (is_array($allPublic) && !empty($allPublic)) {
-            // Differentiate previews by legendary status only:
-            // - Small preview: non-legendary monsters (is_legendary = 0)
-            // - Boss preview: legendary monsters (is_legendary = 1)
+            // Differentiate previews by card_size:
+            // - Small preview: card_size = 2 (playing card)
+            // - Boss preview: card_size = 1 (A6 sheet)
             $smalls = array_values(array_filter($allPublic, function ($m) {
-                return isset($m['is_legendary']) && (int)$m['is_legendary'] === 0;
+                return isset($m['card_size']) && (int)$m['card_size'] === 2;
             }));
 
             $bosses = array_values(array_filter($allPublic, function ($m) {
-                return isset($m['is_legendary']) && (int)$m['is_legendary'] === 1;
+                return isset($m['card_size']) && (int)$m['card_size'] === 1;
             }));
 
             if (!empty($smalls)) {
@@ -992,6 +1044,19 @@ class MonsterController
             }
             if (!empty($bosses)) {
                 $randomBoss = $bosses[array_rand($bosses)];
+            }
+        }
+
+        // Fetch user likes for persistence
+        $userLikes = [];
+        if (isset($_SESSION['user'])) {
+            $userId = $_SESSION['user']['u_id'];
+            $likeModel = new MonsterLike();
+            $monsterIds = [];
+            if ($randomSmall) $monsterIds[] = $randomSmall['monster_id'];
+            if ($randomBoss) $monsterIds[] = $randomBoss['monster_id'];
+            if (!empty($monsterIds)) {
+                $userLikes = $likeModel->getUserLikes($userId, $monsterIds);
             }
         }
 
@@ -1018,6 +1083,13 @@ class MonsterController
         // Load lair cards via model
         $lairModel = new LairCard();
         $lairCards = $lairModel->getByUser($userId);
+        
+        // Get like data for current user
+        $userLikes = [];
+        if (!empty($monsters)) {
+            $monsterIds = array_column($monsters, 'monster_id');
+            $userLikes = $this->likeModel->getUserLikes($userId, $monsterIds);
+        }
 
         // Include mini-card styles for monster previews
         $extraStyles = ['/css/monster-card-mini.css'];

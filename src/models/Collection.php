@@ -256,9 +256,15 @@ class Collection
     {
         $query = "SELECT 
                     m.*,
-                    cm.added_at
+                    cm.added_at,
+                    COALESCE(like_counts.count, 0) as like_count
                   FROM collection_monsters cm
                   INNER JOIN monster m ON cm.monster_id = m.monster_id
+                  LEFT JOIN (
+                      SELECT monster_id, COUNT(*) as count 
+                      FROM monster_likes 
+                      GROUP BY monster_id
+                  ) like_counts ON m.monster_id = like_counts.monster_id
                   WHERE cm.collection_id = :collection_id
                   ORDER BY cm.added_at DESC";
         
@@ -367,5 +373,113 @@ class Collection
         $stmt->execute();
         
         return $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Generate a share token for a collection
+     * 
+     * Creates unique, secure token for sharing collections with direct link.
+     * Token is URL-safe and long enough for security.
+     * 
+     * SHARING FEATURE:
+     * - Users can generate a share token for any collection
+     * - Token allows public viewing without account login
+     * - Share link format: index.php?url=collection-public&token=ABC123...
+     * - Users can revoke sharing by generating new token or removing it
+     * 
+     * @param int $collectionId Collection ID
+     * @return bool True on success, false on failure
+     */
+    public function generateShareToken(int $collectionId): bool
+    {
+        // Generate 32-character random token (URL-safe)
+        $token = bin2hex(random_bytes(16));
+        
+        $query = "UPDATE collections 
+                  SET share_token = :token 
+                  WHERE collection_id = :collection_id";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
+        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+
+    /**
+     * Remove share token from a collection (revoke sharing)
+     * 
+     * Makes collection private again - old links will no longer work.
+     * Useful if user wants to stop sharing.
+     * 
+     * @param int $collectionId Collection ID
+     * @return bool True on success, false on failure
+     */
+    public function revokeShareToken(int $collectionId): bool
+    {
+        $query = "UPDATE collections 
+                  SET share_token = NULL 
+                  WHERE collection_id = :collection_id";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    }
+
+    /**
+     * Get collection by share token (for public viewing)
+     * 
+     * Retrieves collection data without requiring ownership/authentication.
+     * Only works if collection has share_token set.
+     * 
+     * @param string $token Share token (should be 32 hex characters)
+     * @return array|false Collection data or false if not found
+     */
+    public function getByShareToken(string $token)
+    {
+        // Validate token format (basic protection against invalid queries)
+        if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+            return false;
+        }
+        
+        $query = "SELECT 
+                    c.collection_id,
+                    c.u_id,
+                    c.collection_name,
+                    c.description,
+                    c.share_token,
+                    c.created_at,
+                    COUNT(cm.monster_id) as monster_count
+                  FROM collections c
+                  LEFT JOIN collection_monsters cm ON c.collection_id = cm.collection_id
+                  WHERE c.share_token = :token
+                  GROUP BY c.collection_id";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get share token for a collection
+     * 
+     * Returns current token if exists, null otherwise.
+     * 
+     * @param int $collectionId Collection ID
+     * @return string|null Share token or null if not shared
+     */
+    public function getShareToken(int $collectionId): ?string
+    {
+        $query = "SELECT share_token FROM collections WHERE collection_id = :collection_id";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $result = $stmt->fetch();
+        return $result ? $result['share_token'] : null;
     }
 }

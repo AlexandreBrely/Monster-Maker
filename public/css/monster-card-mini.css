@@ -1,189 +1,379 @@
 /* ===== MINI MONSTER CARD STYLES (for index/my-monsters listings) ===== */
 
-/* Small preview cards for monster listings: front compact statblock + back image.
-   Layout: Flexbox two-card layout with hover lift and link wrapping. */
+/* 
+ * OVERVIEW: Small preview cards for monster listings
+ * LAYOUT: Flexbox two-card system (front statblock + back image)
+ * PURPOSE: Provide quick monster overview in listings and search results
+ * 
+ * STRUCTURE:
+ *   .monster-card-mini                  // Wrapper container
+ *     └─ .monster-card-link             // Clickable link (entire card)
+ *         └─ .mini-card-wrapper         // Flex container for front + back
+ *             ├─ .mini-statblock        // FRONT: Compact stats card
+ *             │   ├─ .mini-header       // Title, type, CR
+ *             │   ├─ .mini-stats        // AC, HP, Speed
+ *             │   ├─ .mini-abilities    // 6 ability scores grid
+ *             │   └─ .mini-badge        // Public/Private indicator
+ *             └─ .mini-card-back        // BACK: Monster image
+ *         └─ .mini-actions              // Action buttons (like, collection)
+ * 
+ * RESPONSIVE BEHAVIOR:
+ * - Desktop: Side-by-side front + back cards (200px + 140px)
+ * - Mobile: Stacked vertically, full width
+ * 
+ * VISUAL EFFECTS:
+ * - Hover lift: translateY(-4px) for depth
+ * - Subtle shadows for card elevation
+ * - Smooth transitions (0.2s ease)
+ */
 
+/* === CONTAINER COMPONENTS === */
+
+/* Main card wrapper - provides spacing between cards in grid */
 .monster-card-mini {
     display: inline-block;
     margin-bottom: 30px;
 }
 
-.monster-card-mini a {
-    color: inherit;
+/* Link wrapper - makes entire card clickable while preserving styling */
+.monster-card-link {
+    color: inherit;              /* Inherit text color (prevents blue link color) */
+    text-decoration: none;       /* Remove underline from link */
+    display: block;              /* Allow full-width clickable area */
 }
 
-.monster-card-mini a:hover .mini-statblock,
-.monster-card-mini a:hover .mini-card-back {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+/* HOVER EFFECT: Lift cards on mouse hover for interactivity feedback */
+.monster-card-link:hover .mini-statblock,
+.monster-card-link:hover .mini-card-back {
+    transform: translateY(-4px);              /* Move up 4px */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* Increase shadow for depth */
 }
 
-/* Container for front + back cards */
+/* === CARD LAYOUT STRUCTURE === */
+
+/* 
+ * Flex container holding front + back cards side-by-side
+ * LAYOUT: row direction with 15px gap
+ * ALIGNMENT: Top-aligned (allows cards of different heights)
+ * TRANSITION: Smooth animation for all property changes
+ */
 .mini-card-wrapper {
     display: flex;
-    gap: 15px;
-    align-items: flex-start;
-    transition: all 0.2s ease;
+    gap: 15px;                    /* Space between front and back cards */
+    align-items: flex-start;      /* Align to top (not stretched or centered) */
+    transition: all 0.2s ease;    /* Animate any property changes */
 }
 
-/* FRONT: Compact statblock card */
+/* === FRONT CARD: COMPACT STATBLOCK === */
+
+/* 
+ * Main statblock card (left side)
+ * DIMENSIONS: Fixed 200px width for consistency
+ * STYLE: White background with gray border (classic D&D card aesthetic)
+ * PURPOSE: Display essential combat stats at a glance
+ */
 .mini-statblock {
     background: #fff;
-    border: 2px solid #c8c8c8;
-    border-radius: 4px;
+    border: 2px solid #c8c8c8;    /* Light gray border */
+    border-radius: 4px;           /* Slightly rounded corners */
     padding: 12px;
-    width: 200px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
+    width: 200px;                 /* Fixed width prevents text overflow issues */
+    min-width: 200px;             /* Maintain width even in flex layouts */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);  /* Subtle elevation shadow */
+    transition: all 0.2s ease;    /* Smooth hover animations */
+    overflow: hidden;             /* Prevent content from overflowing card */
 }
 
-/* Header section */
+/* === CARD HEADER SECTION === */
+
+/* 
+ * Header section containing monster name, type, and CR
+ * LAYOUT: Flexbox with space-between (name on left, CR on right)
+ * VISUAL: Bottom border separates header from stats
+ */
 .mini-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 8px;
-    border-bottom: 1px solid #ddd;
+    justify-content: space-between;  /* Push CR to right edge */
+    align-items: flex-start;         /* Align items to top */
+    gap: 8px;                        /* Space between name and CR */
+    border-bottom: 1px solid #ddd;   /* Visual separator */
     padding-bottom: 8px;
     margin-bottom: 8px;
 }
 
+/* Monster name - styled with custom D&D font */
 .mini-title {
     font-size: 0.95rem;
     font-weight: 700;
     color: #333;
-    margin: 0;
-    font-family: "New Rocker", system-ui;
-    line-height: 1.2;
+    margin: 0;                       /* Remove default margins */
+    font-family: "New Rocker", system-ui;  /* Custom fantasy-style font */
+    line-height: 1.2;                /* Tight line spacing for multi-line names */
 }
 
+/* Monster size and type (e.g., "Large Dragon") */
 .mini-subtitle {
     font-size: 0.75rem;
-    font-style: italic;
-    color: #666;
+    font-style: italic;              /* Italic for flavor text style */
+    color: #666;                     /* Muted gray for secondary info */
     margin: 2px 0 0 0;
 }
 
+/* Challenge Rating display (top-right corner) */
 .mini-cr {
     font-size: 0.75rem;
     font-weight: 700;
     color: #333;
-    white-space: nowrap;
+    white-space: nowrap;             /* Prevent CR from wrapping to new line */
 }
 
-/* Quick stats row */
+/* === COMBAT STATS ROW === */
+
+/* 
+ * Quick stats row: AC, HP, Speed
+ * LAYOUT: Flex with space-between for even distribution
+ * PURPOSE: Show most critical combat info at a glance
+ */
 .mini-stats {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between;  /* Evenly distribute AC, HP, Speed */
     gap: 8px;
     margin-bottom: 8px;
     padding-bottom: 6px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee;   /* Subtle separator from abilities */
 }
 
+/* Individual stat display (AC, HP, or Speed) */
 .mini-stat {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: column;          /* Stack label above value */
+    align-items: center;             /* Center-align label and value */
     gap: 2px;
 }
 
+/* Stat label ("AC", "HP", "SPEED") */
 .mini-stat-label {
     font-size: 0.65rem;
     font-weight: 700;
     color: #666;
-    text-transform: uppercase;
+    text-transform: uppercase;       /* ALL CAPS for emphasis */
 }
 
+/* Stat value (number or text) */
 .mini-stat-value {
     font-size: 0.8rem;
     font-weight: 600;
     color: #333;
+    word-break: break-word;          /* Break long words if needed */
+    overflow-wrap: break-word;       /* Alternative word breaking method */
+    max-width: 100%;                 /* Prevent overflow outside container */
 }
 
-/* Abilities grid */
+/* === ABILITY SCORES GRID === */
+
+/* 
+ * 6-column grid for D&D ability scores (STR, DEX, CON, INT, WIS, CHA)
+ * LAYOUT: CSS Grid with equal columns
+ * PURPOSE: Display ability modifiers in standard D&D format
+ */
 .mini-abilities {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 4px;
-    text-align: center;
+    grid-template-columns: repeat(6, 1fr);  /* 6 equal-width columns */
+    gap: 4px;                               /* Small gap between abilities */
+    text-align: center;                     /* Center all text */
     margin-bottom: 8px;
 }
 
+/* Individual ability score container */
 .mini-ability {
     display: flex;
-    flex-direction: column;
+    flex-direction: column;          /* Stack label (STR) above modifier (+2) */
     align-items: center;
     gap: 2px;
 }
 
+/* Ability label (STR, DEX, etc.) */
 .mini-ability-label {
     font-size: 0.65rem;
     font-weight: 700;
     color: #333;
 }
 
+/* Ability modifier value (+2, -1, etc.) */
 .mini-ability-mod {
     font-size: 0.7rem;
     font-weight: 600;
     color: #555;
 }
 
-/* Badge for public/private status */
+/* === STATUS INDICATORS === */
+
+/* 
+ * Public/Private badge indicator
+ * DISPLAYS: Bootstrap badge showing monster visibility status
+ * COLORS: Green for public (visible to all), gray for private (owner only)
+ */
 .mini-badge {
     text-align: center;
-    margin-top: 6px;
+    margin-top: 6px;                 /* Space above badge */
 }
 
 .mini-badge .badge {
-    font-size: 0.7rem;
+    font-size: 0.7rem;               /* Small, unobtrusive text */
 }
 
-/* BACK: Full body image card */
+/* === BACK CARD: MONSTER IMAGE === */
+
+/* 
+ * Back card displaying monster's full-body image
+ * DIMENSIONS: 140px × 195px (maintains aspect ratio with front card)
+ * PURPOSE: Visual preview of monster appearance
+ * FALLBACK: Shows icon placeholder if no image uploaded
+ */
 .mini-card-back {
     background: #fff;
-    border: 2px solid #c8c8c8;
+    border: 2px solid #c8c8c8;       /* Match front card border */
     border-radius: 4px;
     width: 140px;
     height: 195px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
+    overflow: hidden;                /* Crop images that exceed dimensions */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);  /* Match front card shadow */
+    transition: all 0.2s ease;       /* Smooth hover animations */
 }
 
+/* Image element inside back card */
 .mini-back-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: center center;
+    object-fit: cover;               /* Crop to fill card while maintaining aspect ratio */
+    object-position: center center;  /* Center the image within crop area */
 }
 
+/* Placeholder shown when no image is uploaded */
 .mini-back-placeholder {
     width: 100%;
     height: 100%;
-    background: #f5f5f5;
+    background: #f5f5f5;             /* Light gray background */
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ccc;
-    font-size: 3rem;
+    align-items: center;             /* Center icon vertically */
+    justify-content: center;         /* Center icon horizontally */
+    color: #ccc;                     /* Light gray icon color */
+    font-size: 3rem;                 /* Large icon size */
 }
 
-/* Responsive adjustments */
+/* === RESPONSIVE DESIGN: MOBILE OPTIMIZATION === */
+
+/* 
+ * MOBILE LAYOUT (screens ≤ 576px)
+ * Changes:
+ * - Stack cards vertically instead of side-by-side
+ * - Expand cards to full width for better readability
+ * - Reduce font sizes and spacing to fit smaller screens
+ * - Ensure touch targets are large enough for finger taps
+ */
+@media (max-width: 576px) {
+    /* Change from horizontal to vertical layout */
+    .mini-card-wrapper {
+        flex-direction: column;      /* Stack vertically */
+        gap: 10px;                   /* Reduce gap for mobile */
+    }
+    
+    /* Expand front card to full width */
+    .mini-statblock {
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;             /* Remove fixed width constraint */
+    }
+    
+    /* Expand back card to full width */
+    .mini-card-back {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    /* Reduce stats row font size for mobile */
+    .mini-stats {
+        font-size: 0.85em;           /* Slightly smaller text */
+        gap: 4px;                    /* Tighter spacing */
+    }
+    
+    /* Tighter spacing in abilities grid */
+    .mini-abilities {
+        gap: 4px;
+    }
+}
+
+/* Interactive elements: ensure buttons and dropdowns are always clickable */
+/* === INTERACTIVE ACTIONS BAR === */
+
+/* 
+ * Action buttons below card (Like, Add to Collection)
+ * INTERACTION: Buttons have higher z-index to intercept clicks
+ * PURPOSE: Provide quick actions without navigating to detail page
+ * 
+ * CLICK BEHAVIOR:
+ * - Card link: Navigate to monster detail page
+ * - Action buttons: Prevent event propagation, execute action via AJAX
+ */
+
+/* Like button and collection dropdown must be clickable */
+.like-section,
+.like-btn {
+    pointer-events: auto;            /* Enable clicking (overrides parent if needed) */
+    z-index: 10;                     /* Stack above card link */
+}
+
+/* Hover state for like button */
+.like-btn:hover {
+    text-decoration: none;           /* Remove underline on hover */
+}
+
+/* Disabled state (during AJAX request) */
+.like-btn:disabled {
+    opacity: 0.6;                    /* Fade out to show disabled state */
+    cursor: not-allowed;             /* Show "not allowed" cursor */
+}
+
+/* Collection dropdown must be clickable */
+.dropdown {
+    pointer-events: auto;            /* Enable clicking */
+    z-index: 10;                     /* Stack above card link */
+}
+
+/* Action buttons bar below the cards */
+.mini-actions {
+    padding: 0 4px;                  /* Small horizontal padding */
+}
+
+/* Mobile: Stack cards vertically and ensure content doesn't overflow */
 @media (max-width: 576px) {
     .mini-card-wrapper {
         flex-direction: column;
-        align-items: center;
+        gap: 10px;
     }
     
-    .mini-statblock,
+    .mini-statblock {
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+    }
+    
     .mini-card-back {
         width: 100%;
-        max-width: 280px;
+        max-width: 100%;
     }
     
-    .mini-card-back {
-        height: auto;
-        aspect-ratio: 5/7;
+    .mini-stats {
+        font-size: 0.85em;
+        gap: 4px;
+    }
+    
+    .mini-abilities {
+        gap: 4px;
+    }
+    
+    .mini-stat-value,
+    .mini-ability-mod {
+        font-size: 0.75rem;
     }
 }

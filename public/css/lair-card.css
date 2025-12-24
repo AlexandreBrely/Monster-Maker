@@ -1,9 +1,43 @@
 /* ===== LAIR CARD STYLES (Horizontal Landscape Format) ===== */
 
-/* Horizontal landscape lair card (A6). Single-column layout with sections
-   for lair actions and regional effects. Uses Flexbox for the dual-card view. */
+/*
+ * LAIR ACTION CARDS - Initiative 20 Mechanics
+ * =============================================
+ * 
+ * PURPOSE:
+ * Special cards for legendary monster lair actions that occur on initiative count 20.
+ * Separate from monster statblock for easier reference during combat.
+ * 
+ * DIMENSIONS: 5" × 3.5" (Landscape A6-ish format)
+ * ORIENTATION: Horizontal (landscape) for wider content area
+ * 
+ * STRUCTURE:
+ *   .lair-card-wrapper                // Container for front + back
+ *     ├─ .lair-card-front            // FRONT: Lair actions
+ *     │   ├─ .lair-header            // Name, initiative
+ *     │   ├─ .lair-description       // Flavor text
+ *     │   ├─ .lair-section           // Lair Actions list
+ *     │   └─ .lair-section           // Regional Effects list
+ *     └─ .lair-card-back             // BACK: Atmospheric image
+ * 
+ * USE CASE:
+ * DM places this card on the table during legendary monster encounters.
+ * On initiative count 20, consult card for available lair actions.
+ * 
+ * D&D 5E RULES:
+ * - Lair actions occur on initiative count 20 (losing ties)
+ * - Monster can use ONE lair action per round
+ * - Lair actions don't count against monster's regular actions
+ * - Regional effects persist while monster is alive in lair
+ */
 
-/* Container for front + back cards displayed side by side */
+/* === CONTAINER: FRONT + BACK CARD WRAPPER === */
+
+/*
+ * Flexbox container displaying lair cards side-by-side
+ * LAYOUT: Horizontal flex with centered alignment
+ * GAP: 30px provides clear visual separation
+ */
 .lair-card-wrapper {
     display: flex;              /* Side-by-side layout */
     gap: 30px;                  /* Space between cards */
@@ -13,24 +47,48 @@
     max-width: 100%;
 }
 
-/* FRONT CARD: Lair actions and regional effects (landscape orientation) */
+/* === FRONT CARD: LAIR ACTIONS === */
+
+/*
+ * Main lair card displaying actions and effects
+ * 
+ * DIMENSIONS: 5" × 3.5" (wide landscape for readable text)
+ * LAYOUT: Single column (no multi-column like boss cards)
+ * OVERFLOW: Hidden to prevent text escape
+ * 
+ * SECTIONS:
+ * 1. Header: Lair name, monster name, initiative value
+ * 2. Description: Brief flavor text about the lair
+ * 3. Lair Actions: List of actions available at initiative 20
+ * 4. Regional Effects: Persistent effects in the area
+ */
 .lair-card-front {
     background: #fff;
-    border: 3px solid #c8c8c8;
+    border: 3px solid #c8c8c8;       /* Thick border for handling */
     border-radius: 4px;
-    padding: 16px;
-    width: 5in;      /* Landscape width (A6 landscape: 5.8in × 4.1in) */
-    height: 3.5in;   /* Landscape height */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 16px;                   /* More padding than statblocks (less dense) */
+    width: 5in;                      /* Landscape width */
+    height: 3.5in;                   /* Landscape height */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);  /* Subtle depth */
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: hidden;                /* Prevent text overflow */
     font-family: "Nunito", sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.75rem;              /* Readable text size */
     display: flex;
-    flex-direction: column;
+    flex-direction: column;          /* Stack sections vertically */
 }
 
-/* Header: Lair name, monster name, initiative count */
+/* === HEADER SECTION === */
+
+/*
+ * Card header with lair name and initiative indicator
+ * 
+ * LAYOUT: Flexbox with space-between
+ *   Left: Lair name and monster name
+ *   Right: Initiative count badge (20)
+ * 
+ * VISUAL: Bottom border separates from content
+ */
 .lair-header {
     display: flex;
     justify-content: space-between;
