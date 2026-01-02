@@ -8,19 +8,22 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     zip \
+    curl \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo \
         pdo_mysql \
         intl \
-    && pecl install xdebug \
-    && docker-php-ext-enable xdebug \
+        gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Nettoyage d'une éventuelle config xdebug activée par défaut
-RUN rm -f /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini || true
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Réactivation propre de Xdebug (s'il est déjà installé dans l'image)
-RUN docker-php-ext-enable xdebug || true
+# Skip composer install during build; run it on the mounted volume at runtime if needed.
 
 # Copier ta configuration Apache
 COPY ./docker/apache/vhost.conf /etc/apache2/sites-available/000-default.conf

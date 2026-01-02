@@ -11,13 +11,28 @@ services:
       - "8000:80"
     depends_on:
       - db
+      - pdf-renderer
     environment:
       - MYSQL_HOST=db
       - MYSQL_USER=root
       - MYSQL_PASSWORD=root
       - MYSQL_DATABASE=monster_maker
+      - PDF_RENDERER_URL=http://pdf-renderer:3000
     networks:
       - app-network
+
+  pdf-renderer:
+    container_name: puppeteer-pdf-renderer
+    build:
+      context: .
+      dockerfile: Dockerfile.puppeteer
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
 
   db:
     build:

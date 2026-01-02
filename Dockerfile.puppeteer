@@ -1,0 +1,26 @@
+FROM node:20
+
+WORKDIR /app
+
+# Install Chromium browser using apt-get
+# Chromium is the open-source version of Chrome
+RUN apt-get update && apt-get install -y \
+    chromium \
+    ca-certificates \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy package.json
+COPY puppeteer-service/package.json .
+
+# Install dependencies
+RUN npm install --production
+
+# Copy service code
+COPY puppeteer-service/index.js .
+
+# Expose port
+EXPOSE 3000
+
+# Start service
+CMD ["npm", "start"]

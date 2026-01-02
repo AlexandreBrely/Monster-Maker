@@ -31,15 +31,6 @@
 <!-- Monster Actions: Global functions for like, add-to-collection, etc. -->
 <script src="/js/monster-actions.js"></script>
 
-<!-- html2canvas: Library for converting HTML elements to images (used for card downloads) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-<!-- jsPDF: Library for PDF generation (using unpkg CDN instead of cdnjs) -->
-<script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
-
-<!-- Card Download: Custom script for downloading monster cards as images -->
-<script src="/js/card-download.js"></script>
-
 <!-- Bootstrap 5.3.8 JavaScript bundle includes Popper.js for dropdowns/tooltips -->
 <!-- integrity attribute ensures CDN file hasn't been tampered with (security) -->
 <!-- crossorigin="anonymous" allows loading from different origin (CDN) -->

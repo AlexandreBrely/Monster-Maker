@@ -28,10 +28,10 @@ $deleteModalId = $deleteModalId ?? 'deleteModal';
 
 <!-- Action Buttons: Download, Add to Collection, Edit, Delete (styled with Bootstrap only) -->
 <div class="container my-4">
-    <div class="d-flex justify-content-center gap-2 flex-wrap">
-        <!-- Download for Print button: Creates HTML with embedded cards at correct print size -->
-        <!-- Users download and open the file, then print without adjustments needed -->
-        <button onclick="downloadCardForPrint(event)" class="btn btn-sm btn-success">
+    <div class="d-flex justify-content-center gap-2 flex-wrap" data-monster-id="<?php echo (int)$monster['monster_id']; ?>">
+        <!-- Download for Print button: Puppeteer microservice -->
+        <!-- Generates PDF via headless Chrome (Puppeteer) for pixel-perfect rendering -->
+        <button onclick="downloadCardPuppeteer(event)" class="btn btn-sm btn-success">
             <i class="fa-solid fa-file-pdf"></i> Download for Print
         </button>
         

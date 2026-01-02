@@ -1133,4 +1133,483 @@ class MonsterController
             return '+0';
         }
     }
+
+    /**
+     * Render clean HTML for monster card PDF generation
+     * 
+     * This method is called by Puppeteer to fetch the HTML that will be rendered to PDF.
+     * Returns plain HTML without header/navbar/footer - just the card content with CSS.
+     * 
+     * Route: ?url=monster-print&id={id}
+     * 
+     * @return void Outputs HTML directly (no JSON response)
+     */
+    /**
+     * RENDER CLEAN HTML FOR PDF GENERATION - printPreview()
+     * =========================================================
+     * 
+     * PURPOSE:
+     * Renders a monster card as clean HTML (without header, footer, navigation).
+     * This HTML is fetched by the Puppeteer service to render as PDF.
+     * 
+     * WHY SEPARATE FROM SHOW()?
+     * - show() includes header, navbar, footer (for web display)
+     * - Puppeteer needs just the card content (for PDF generation)
+     * - Prevents extra elements from appearing in the printed PDF
+     * 
+     * WHEN IS THIS CALLED?
+     * Indirectly by Puppeteer microservice when generating PDF:
+     * 1. User clicks "Download for Print" button
+     * 2. JavaScript calls MonsterController::generatePdf()
+     * 3. generatePdf() calls Puppeteer service with URL:
+     *    http://web/index.php?url=monster-print&id=42
+     * 4. Router recognizes 'monster-print' and calls this method
+     * 5. This method returns clean HTML
+     * 6. Puppeteer service renders HTML as PDF
+     * 7. PDF returned to user
+     * 
+     * FLOW:
+     * 
+     * STEP 1: Get monster ID from URL parameter
+     * @param GET['id'] Monster database ID (from JavaScript fetch request)
+     * 
+     * STEP 2: Validate ID exists
+     * If missing → 404 error page
+     * 
+     * STEP 3: Fetch monster from database
+     * Uses Monster model to get all monster properties
+     * 
+     * STEP 4: Check monster exists
+     * If not found → 404 error page
+     * 
+     * STEP 5: Validate user permissions
+     * - If monster is public: Anyone can view
+     * - If monster is private: Only owner can view
+     * If unauthorized → 403 access denied page
+     * 
+     * STEP 6: Prepare monster data (same as show.php)
+     * Convert database fields to display format:
+     * - parseMonsterFields() → Format skills, senses, resistances
+     * - prepareAbilityGrid() → Format ability scores
+     * - getXpForCR() → Calculate XP reward
+     * 
+     * STEP 7: Determine card type
+     * Boss cards (legendary) use different CSS styling than small cards
+     * - Boss: Full 2-column layout with large stat block
+     * - Small: Compact statblock
+     * 
+     * STEP 8: Load print-specific styles
+     * CSS files optimized for printing:
+     * - boss-card.css → Boss monster styling
+     * - small-statblock.css → Small statblock styling
+     * - monster-card-mini.css → Shared card styles
+     * 
+     * STEP 9: Render clean template
+     * print-wrapper.php = template with NO header/nav/footer
+     * Only shows: Card title, abilities, AC, HP, traits, actions
+     * 
+     * RELATED METHODS:
+     * - generatePdf() → Calls Puppeteer with this output
+     * - show() → Similar logic but includes web navigation
+     * - Router (index.php) → Maps url=monster-print to this method
+     * 
+     * TEMPLATES USED:
+     * - print-templates/print-wrapper.php → Main scaffold
+     * - monster/boss-card.php → Boss card rendering
+     * - monster/small-statblock.php → Small card rendering
+     * 
+     * MODELS USED:
+     * - Monster::getById() → Fetch from database
+     * - Authorization logic → Check is_public and u_id
+     * 
+     * @return void Outputs HTML directly (no JSON, no redirect)
+     */
+    public function printPreview()
+    {
+        // STEP 1: Get monster ID from URL
+        // Provided by JavaScript when requesting the print template
+        // Example: index.php?url=monster-print&id=42
+        $id = $_GET['id'] ?? null;
+        
+        // STEP 2: Validate ID exists
+        if (!$id) {
+            require_once __DIR__ . '/../views/pages/error-404.php';
+            return;
+        }
+        
+        // STEP 3: Fetch monster from database
+        $monster = $this->monsterModel->getById($id);
+
+        // STEP 4: Check if monster was found
+        if (!$monster) {
+            require_once __DIR__ . '/../views/pages/error-404.php';
+            return;
+        }
+
+        // STEP 5: Check permissions
+        // Is user allowed to view this monster?
+        // - Public monsters: Anyone (no user required)
+        // - Private monsters: Only owner
+        $userId = isset($_SESSION['user']) ? $_SESSION['user']['u_id'] : null;
+        if (!$monster['is_public'] && $monster['u_id'] != $userId) {
+            // User doesn't have permission
+            require_once __DIR__ . '/../views/pages/error-403.php';
+            return;
+        }
+
+        // STEP 6: Prepare monster data (convert database format to display format)
+        // prepareAbilityGrid() formats ability scores (STR, DEX, CON, etc.)
+        $abilitiesGrid = $this->prepareAbilityGrid($monster);
+        
+        // parseMonsterFields() formats various fields:
+        // - Skills (Perception, Stealth, etc.)
+        // - Senses (Darkvision, Blindsight, etc.)
+        // - Damage resistances, immunities, etc.
+        $parsedFields = $this->parseMonsterFields($monster);
+        $skills = $parsedFields['skills'];
+        $senses = $parsedFields['senses'];
+
+        // Extract action lists from monster
+        // Each is optional (some monsters have no reactions, for example)
+        $traits = $monster['traits'] ?? [];
+        $actions = $monster['actions'] ?? [];
+        $bonusActions = $monster['bonus_actions'] ?? [];
+        $reactions = $monster['reactions'] ?? [];
+        $legendaryActions = $monster['legendary_actions'] ?? [];
+        
+        // Convert challenge rating to XP value
+        // Example: CR 10 → 5,900 XP
+        $monsterXp = $this->getXpForCR((string) ($monster['challenge_rating'] ?? ''));
+
+        // STEP 7: Determine card type
+        // Different styling for boss vs small creatures
+        $isBoss = false;
+        if (isset($monster['card_size'])) {
+            // card_size: 0 = small, 1 = boss
+            $isBoss = ((int)$monster['card_size'] === 1);
+        } elseif (isset($monster['is_legendary'])) {
+            // is_legendary: 1 = boss card
+            $isBoss = ((int)$monster['is_legendary'] === 1);
+        }
+
+        // STEP 8: Load print-specific stylesheets
+        // These CSS files are optimized for PDF printing
+        $extraStyles = [
+            '/css/boss-card.css',           // Boss monster styling
+            '/css/small-statblock.css',     // Small statblock styling
+            '/css/monster-card-mini.css'    // Shared card styles
+        ];
+
+        // STEP 9: Set output type and render template
+        // Tell browser this is HTML (not JSON or PDF)
+        header('Content-Type: text/html; charset=utf-8');
+        
+        // Render print-only template (no header/navbar/footer)
+        // This template is much cleaner than show.php - only card content
+        require_once __DIR__ . '/../views/print-templates/print-wrapper.php';
+    }
+
+    /**
+     * GENERATE PDF VIA PUPPETEER MICROSERVICE - generatePdf()
+     * ===========================================================
+     * 
+     * WHAT DOES THIS METHOD DO?
+     * Acts as the API endpoint for PDF generation. When user clicks "Download for Print":
+     * 1. JavaScript calls this endpoint via fetch()
+     * 2. This method validates permissions
+     * 3. Calls PrintService which communicates with Puppeteer service
+     * 4. Streams PDF back to user's browser as a downloadable file
+     * 
+     * ARCHITECTURE OVERVIEW:
+     * 
+     *     User Browser (JavaScript)
+     *            ↓ fetch('?url=monster-pdf&id=42')
+     *     this method (generatePdf)
+     *            ↓ Creates print URL
+     *     PrintService->generatePdf($url)
+     *            ↓ HTTP POST to microservice
+     *     Puppeteer Service (Node.js) - Docker container
+     *            ↓ Launches Chrome, renders HTML, generates PDF
+     *     PrintService receives PDF bytes
+     *            ↓ cURL response
+     *     this method echoes binary PDF
+     *            ↓ HTTP response with Content-Type: application/pdf
+     *     User's browser receives PDF
+     *            ↓ Browser download dialog
+     *     User saves file: MonsterMaker_DragonName.pdf
+     * 
+     * SECURITY CONSIDERATIONS:
+     * - Validates monster exists
+     * - Validates user has permission (public or owner)
+     * - Uses session user ID for ownership check
+     * - Sanitizes monster name for filename
+     * - All errors returned as JSON (prevents XSS in error messages)
+     * 
+     * REQUEST FLOW:
+     * 
+     * STEP 1: Get monster ID from URL parameter
+     * @param GET['id'] Monster ID from JavaScript fetch URL
+     * 
+     * STEP 2: Validate ID provided
+     * If missing → HTTP 400 Bad Request + JSON error
+     * 
+     * STEP 3: Fetch monster from database
+     * Uses Monster model to get all monster properties
+     * 
+     * STEP 4: Validate monster exists
+     * If not found → HTTP 404 Not Found + JSON error
+     * 
+     * STEP 5: Check permissions
+     * Is user authorized to view this monster?
+     * - Public monsters: Yes (no authentication required)
+     * - Private monsters: Only owner (checked via u_id)
+     * If unauthorized → HTTP 403 Forbidden + JSON error
+     * 
+     * STEP 6: Build print URL
+     * URL points to printPreview() method which renders clean HTML
+     * URL format: http://web/index.php?url=monster-print&id=42
+     * Note: 'web' = Docker service hostname (not localhost)
+     * 
+     * STEP 7: Call PrintService
+     * PrintService::generatePdf() handles:
+     * - Creating HTTP request to Puppeteer service
+     * - Sending request via cURL (Docker network)
+     * - Parsing response and extracting PDF
+     * - Error handling for service failures
+     * 
+     * PUPPETEER SERVICE PROCESS:
+     * What happens inside Puppeteer (Node.js/Chrome):
+     * 1. Receives request with print URL
+     * 2. Launches headless Chrome browser
+     * 3. Navigates to print URL (fetches from PHP web server)
+     * 4. Chrome renders HTML with full CSS support
+     * 5. Converts rendered page to PDF using Chrome's print engine
+     * 6. Returns PDF as base64-encoded JSON
+     * 
+     * STEP 8: Prepare filename
+     * Converts monster name to safe filename:
+     * - Input: "Ancient Red Dragon"
+     * - After regex: "Ancient_Red_Dragon"
+     * - Final: "MonsterMaker_Ancient_Red_Dragon.pdf"
+     * Sanitization prevents issues with special characters
+     * 
+     * STEP 9: Set HTTP headers
+     * Content-Type: application/pdf
+     *   → Tells browser this is a PDF file
+     * Content-Disposition: attachment; filename="..."
+     *   → Tells browser to download (not display inline)
+     * Content-Length: bytes
+     *   → Tells browser how large the file is
+     * 
+     * STEP 10: Stream PDF binary data
+     * echo $pdf; sends the raw binary PDF bytes to browser
+     * Browser receives complete PDF and starts download
+     * 
+     * ERROR HANDLING:
+     * All errors return HTTP error code + JSON message:
+     * - 400: Missing ID parameter
+     * - 404: Monster not found
+     * - 403: Access denied (not public, not owner)
+     * - 500: Server error (Puppeteer failed, network error, etc.)
+     * 
+     * JavaScript can detect errors:
+     * - Check response.ok (true for 200-299)
+     * - Parse error message from JSON
+     * - Show user-friendly alert
+     * 
+     * RELATED COMPONENTS:
+     * - Frontend: public/js/monster-actions.js -> downloadCardPuppeteer()
+     * - Backend: src/services/PrintService.php -> generatePdf()
+     * - Microservice: puppeteer-service/index.js -> /render-pdf endpoint
+     * - Template: printPreview() -> Renders clean HTML for Puppeteer
+     * - Router: index.php -> Maps 'monster-pdf' to this method
+     * 
+     * PARAMETERS:
+     * @param GET['id'] Monster database ID (required)
+     * 
+     * @return void Outputs PDF binary with headers (or JSON error)
+     * 
+     * HTTP RESPONSES:
+     * 
+     * Success (200):
+     *   HTTP/1.1 200 OK
+     *   Content-Type: application/pdf
+     *   Content-Disposition: attachment; filename="MonsterMaker_DragonName.pdf"
+     *   Content-Length: 87420
+     *   [PDF binary data - 87420 bytes]
+     * 
+     * Error - Missing ID (400):
+     *   HTTP/1.1 400 Bad Request
+     *   Content-Type: application/json
+     *   {"error": "Monster ID is required"}
+     * 
+     * Error - Not Found (404):
+     *   HTTP/1.1 404 Not Found
+     *   Content-Type: application/json
+     *   {"error": "Monster not found"}
+     * 
+     * Error - Forbidden (403):
+     *   HTTP/1.1 403 Forbidden
+     *   Content-Type: application/json
+     *   {"error": "Access denied"}
+     * 
+     * Error - Server Error (500):
+     *   HTTP/1.1 500 Internal Server Error
+     *   Content-Type: application/json
+     *   {"error": "Service unavailable or rendering failed"}
+     * 
+     * DEBUGGING:
+     * If PDF generation fails:
+     * 1. Open browser DevTools (F12)
+     * 2. Go to Network tab
+     * 3. Click "Download for Print" button
+     * 4. Find request to "?url=monster-pdf"
+     * 5. Check response status code (tells you which error)
+     * 6. Check response body (JSON error message)
+     * 7. Check Console tab for JavaScript errors
+     * 
+     * Docker Service Debugging:
+     * docker logs pdf-renderer → See Puppeteer logs
+     * docker logs php-apache-monster-maker → See PHP errors
+     * 
+     * EXAMPLE JAVASCRIPT USAGE:
+     * 
+     * async function downloadCardPuppeteer(event) {
+     *     const monsterId = 42;
+     *     try {
+     *         // Call this endpoint
+     *         const response = await fetch('?url=monster-pdf&id=' + monsterId);
+     *         
+     *         // Check for HTTP errors
+     *         if (!response.ok) {
+     *             const error = await response.json();
+     *             throw new Error(error.error);
+     *         }
+     *         
+     *         // Get PDF as binary
+     *         const pdfBlob = await response.blob();
+     *         
+     *         // Trigger download
+     *         const url = URL.createObjectURL(pdfBlob);
+     *         const link = document.createElement('a');
+     *         link.href = url;
+     *         link.download = 'MonsterMaker_Dragon.pdf';
+     *         link.click();
+     *         
+     *     } catch (error) {
+     *         alert('Error: ' + error.message);
+     *     }
+     * }
+     * 
+     * WHY THIS ARCHITECTURE?
+     * 
+     * Why not use mPDF or TCPDF (PHP libraries)?
+     * - Can't handle modern CSS (flexbox, grid, transforms)
+     * - Font rendering issues
+     * - Complex layouts break
+     * - Doesn't match what users see in browser
+     * 
+     * Why not run Puppeteer inside PHP?
+     * - Puppeteer is Node.js library (not PHP)
+     * - Wrapping it with shell_exec() is slow and unreliable
+     * - Blocks PHP process while Chrome renders (hangs web server)
+     * 
+     * Why microservice architecture?
+     * - Separation of concerns (PHP ≠ rendering)
+     * - Scalability (can run multiple Puppeteer instances)
+     * - Reliability (Chrome crash doesn't crash web server)
+     * - Language flexibility (use best tool for job)
+     * 
+     * Docker networking allows service-to-service communication:
+     * - PHP container calls Puppeteer container by hostname 'pdf-renderer'
+     * - Secure internal network (not exposed to internet)
+     * - Automatically load-balanced by Docker
+     * 
+     * @throws Exception If Puppeteer service fails
+     */
+    public function generatePdf()
+    {
+        // STEP 1 & 2: Get and validate monster ID
+        $id = $_GET['id'] ?? null;
+        
+        if (!$id) {
+            // Missing parameter - return JSON error
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Monster ID is required']);
+            return;
+        }
+
+        try {
+            // STEP 3 & 4: Fetch monster from database and validate
+            $monster = $this->monsterModel->getById($id);
+            if (!$monster) {
+                // Monster not found
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Monster not found']);
+                return;
+            }
+
+            // STEP 5: Check permissions
+            // Is user allowed to access this monster?
+            // - Public monsters: No auth required
+            // - Private monsters: Only owner (check u_id)
+            $userId = isset($_SESSION['user']) ? $_SESSION['user']['u_id'] : null;
+            if (!$monster['is_public'] && $monster['u_id'] != $userId) {
+                // User doesn't have permission
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Access denied']);
+                return;
+            }
+
+            // STEP 6: Build URL for print template
+            // printPreview() renders clean HTML (no header/nav/footer)
+            // This URL is what Puppeteer service will fetch and render
+            // Using 'web' service name (Docker hostname) instead of localhost
+            $printUrl = 'http://web/index.php?url=monster-print&id=' . $id;
+
+            // STEP 7: Call Puppeteer service via PrintService
+            // PrintService handles:
+            // - Creating HTTP POST request
+            // - Sending to Puppeteer container
+            // - Parsing response
+            // - Error handling
+            $printService = new \App\Services\PrintService();
+            $pdf = $printService->generatePdf($printUrl, [
+                'format' => 'A4',               // Paper size
+                'printBackground' => true,     // Include background colors
+                'preferCSSPageSize' => true    // Respect CSS @page rules
+            ]);
+
+            // STEP 8: Prepare filename
+            // Sanitize monster name: "Ancient Red Dragon" → "Ancient_Red_Dragon"
+            // This prevents issues with special characters
+            $sanitizedName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $monster['name']);
+            $filename = 'MonsterMaker_' . $sanitizedName . '.pdf';
+            
+            // STEP 9: Set HTTP response headers
+            // Content-Type tells browser this is PDF
+            header('Content-Type: application/pdf');
+            // Content-Disposition tells browser to download (not display inline)
+            // Filename is what appears in save dialog
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            // Content-Length tells browser file size (for progress bar)
+            header('Content-Length: ' . strlen($pdf));
+            
+            // STEP 10: Stream PDF to browser
+            // echo sends binary PDF data
+            // Browser receives complete file and starts download
+            echo $pdf;
+
+        } catch (\Exception $e) {
+            // STEP 11: Error handling
+            // If anything fails (invalid PDF, service down, etc.)
+            // Return JSON error instead of crashing
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
 }

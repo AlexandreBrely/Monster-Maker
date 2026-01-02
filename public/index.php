@@ -51,6 +51,8 @@ $routes = [
     'monsters' => ['controller' => 'MonsterController', 'action' => 'index'],
     'monster' => ['controller' => 'MonsterController', 'action' => 'handleMonsterRoute'],
     'monster-like' => ['controller' => 'MonsterController', 'action' => 'toggleLike'],
+    'monster-print' => ['controller' => 'MonsterController', 'action' => 'printPreview'],
+    'monster-pdf' => ['controller' => 'MonsterController', 'action' => 'generatePdf'],
     'create' => ['controller' => 'MonsterController', 'action' => 'create'],
     'create_select' => ['controller' => 'MonsterController', 'action' => 'selectCreate'],
     'create_boss' => ['controller' => 'MonsterController', 'action' => 'createBoss'],
