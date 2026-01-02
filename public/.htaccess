@@ -1,57 +1,56 @@
 # ====================================================================
-# FICHIER .htaccess - Configuration Apache pour URL Rewriting
+# .htaccess - Apache rewrite configuration for clean URLs
 # ====================================================================
-# Ce fichier permet de créer des URLs "propres" sans index.php visible
-# Exemple : au lieu de "index.php?url=monsters", on peut écrire juste "monsters"
+# This file enables clean URLs without showing index.php in the path
+# Example: instead of "index.php?url=monsters", you can browse simply "monsters"
 
-# Vérifie que le module mod_rewrite d'Apache est activé
-# Si le module n'est pas activé, tout le code dans ce bloc sera ignoré
+# Check that Apache's mod_rewrite module is enabled
+# If the module is missing, everything in this block is ignored
 <IfModule mod_rewrite.c>
     
-    # Active le moteur de réécriture d'URLs
-    # Sans cette ligne, aucune règle de réécriture ne fonctionnera
+    # Turn on the URL rewrite engine
+    # Without this line, no rewrite rule will run
     RewriteEngine On
     
     # ----------------------------------------------------------------
-    # RÈGLES DE RÉÉCRITURE
+    # REWRITE RULES
     # ----------------------------------------------------------------
     
-    # CONDITION 1 : Vérifie si le fichier demandé N'existe PAS physiquement
-    # !-f signifie "n'est pas un fichier" (! = NOT, -f = file)
-    # Exemple : si on demande "style.css" et qu'il existe, cette condition est FAUSSE
+    # CONDITION 1: Requested path is NOT an existing file
+    # !-f means "is not a file" (! = NOT, -f = file)
+    # Example: requesting style.css that exists makes this condition FALSE
     RewriteCond %{REQUEST_FILENAME} !-f
     
-    # CONDITION 2 : Vérifie si le dossier demandé N'existe PAS physiquement
-    # !-d signifie "n'est pas un dossier" (! = NOT, -d = directory)
-    # Exemple : si on demande "css/" et qu'il existe, cette condition est FAUSSE
+    # CONDITION 2: Requested path is NOT an existing directory
+    # !-d means "is not a directory" (! = NOT, -d = directory)
+    # Example: requesting css/ that exists makes this condition FALSE
     RewriteCond %{REQUEST_FILENAME} !-d
     
-    # RÈGLE : Si les 2 conditions au-dessus sont VRAIES, on applique cette règle
-    # ^(.*)$ = capture TOUT ce qui suit le nom de domaine
-    # index.php?url=$1 = redirige vers index.php avec l'URL capturée en paramètre
-    # [QSA,L] = flags spéciaux :
-    #   QSA = Query String Append (garde les paramètres GET existants)
-    #   L = Last (arrête le traitement, c'est la dernière règle à appliquer)
-    # 
-    # EXEMPLE CONCRET :
-    # Utilisateur tape : localhost:8000/monsters
-    # Apache vérifie : pas de fichier "monsters" ? OUI
-    # Apache vérifie : pas de dossier "monsters" ? OUI
-    # Apache transforme en : localhost:8000/index.php?url=monsters
-    # Le routeur PHP dans index.php reçoit alors "monsters" et charge le bon contrôleur
+    # RULE: When both conditions are TRUE, rewrite the request
+    # ^(.*)$ captures everything after the domain
+    # index.php?url=$1 forwards the captured URL to index.php as a parameter
+    # [QSA,L] flags:
+    #   QSA = Query String Append (keeps existing GET parameters)
+    #   L   = Last (stop processing further rules)
+    #
+    # EXAMPLE:
+    # User types: localhost:8000/monsters
+    # Apache checks: no file "monsters"? YES
+    # Apache checks: no directory "monsters"? YES
+    # Apache rewrites to: localhost:8000/index.php?url=monsters
+    # The PHP router in index.php then loads the correct controller
     RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
     
 </IfModule>
 
 # ====================================================================
-# POURQUOI C'EST IMPORTANT ?
+# WHY THIS MATTERS
 # ====================================================================
-# Sans ce fichier : vos URLs seraient moches et exposées
+# Without this file: URLs stay noisy and exposed
 #   → index.php?url=monsters&id=5
-# 
-# Avec ce fichier : URLs propres et professionnelles
+#
+# With this file: clean, professional URLs
 #   → monsters/5
-# 
-# ATTENTION : Ce fichier ne fonctionne QU'AVEC APACHE
-# Si vous utilisez Nginx, il faut une configuration différente
+#
+# Note: This file works with Apache. For Nginx, use an equivalent server block.
 # ====================================================================

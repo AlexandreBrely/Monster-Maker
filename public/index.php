@@ -3,11 +3,11 @@
 // This is the single entry point for all HTTP requests.
 // It bootstraps the app, then dispatches to the appropriate Controller.
 
-// Configuration de base
+// Basic configuration
 define('ROOT', dirname(__DIR__));
 define('BASE_URL', '/');
 
-// Démarrage de la session
+// Start session
 session_start();
 
 // Simple autoloader to load classes automatically
@@ -31,7 +31,7 @@ $url = isset($_GET['url']) ? $_GET['url'] : 'home';
 $url = filter_var($url, FILTER_SANITIZE_URL);
 $url = explode('/', $url);
 
-// Récupérer la première partie de l'URL (route principale)
+// Extract primary route segment from URL
 $route = isset($url[0]) && $url[0] != '' ? $url[0] : 'home';
 $action = isset($url[1]) && $url[1] != '' ? $url[1] : 'index';
 
@@ -88,12 +88,12 @@ if (isset($routes[$route])) {
     $controllerName = $routes[$route]['controller'];
     $action = $routes[$route]['action'];
 } else {
-    // Route non trouvée, afficher 404
+    // Route not found; render 404
     $controllerName = 'PagesController';
     $action = 'error404';
 }
 
-// Chemin complet du contrôleur
+// Build controller path
 $controllerFile = ROOT . '/src/controllers/' . $controllerName . '.php';
 $controllerClass = 'App\\Controllers\\' . $controllerName;
 
@@ -101,27 +101,27 @@ $controllerClass = 'App\\Controllers\\' . $controllerName;
 if (file_exists($controllerFile)) {
     require_once $controllerFile;
     
-    // Vérifier si la classe existe
+    // Ensure controller class exists
     if (class_exists($controllerClass)) {
         $controller = new $controllerClass();
         
-        // Vérifier si la méthode existe
+        // Ensure action method exists
         if (method_exists($controller, $action)) {
             $controller->$action();
         } else {
-            // Méthode non trouvée, afficher page 404
+            // Method not found; render 404
             require_once ROOT . '/src/controllers/PagesController.php';
             $controller = new \App\Controllers\PagesController();
             $controller->error404();
         }
     } else {
-        // Classe non trouvée, afficher page 404
+        // Controller class not found; render 404
         require_once ROOT . '/src/controllers/PagesController.php';
         $controller = new \App\Controllers\PagesController();
         $controller->error404();
     }
 } else {
-    // Contrôleur non trouvé, afficher page 404
+    // Controller file not found; render 404
     require_once ROOT . '/src/controllers/PagesController.php';
     $controller = new \App\Controllers\PagesController();
     $controller->error404();

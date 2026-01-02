@@ -392,7 +392,7 @@ class Monster
 
             $stmt = $this->db->prepare($sql);
 
-            // Binding des paramètres avec valeurs par défaut
+            // Bind parameters with default values
             $stmt->execute([
                 ':name' => $data['name'],
                 ':size' => $data['size'] ?? '',

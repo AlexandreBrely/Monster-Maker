@@ -10,7 +10,7 @@ use App\Models\MonsterLike;
 
 /**
  * MonsterController
- * Gère les opérations CRUD des monstres et les uploads d'images.
+ * Handles monster CRUD operations and image uploads.
  */
 class MonsterController
 {
@@ -43,7 +43,7 @@ class MonsterController
         }
     }
 
-    // Affiche le formulaire de création de monstre
+    // Display monster creation form
     // Main create logic (called by createBoss and createSmall)
     /**
      * Display create form (boss or small) and handle submission.
@@ -71,7 +71,7 @@ class MonsterController
             $errors = $this->monsterModel->validate($data);
             $images = [];
 
-            // Traitement des images si présentes
+            // Handle images when provided
             if (isset($_FILES['image_portrait']) && !empty($_FILES['image_portrait']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_portrait'], 'monsters');
                 if ($imageResult['success']) {
@@ -92,7 +92,7 @@ class MonsterController
                 }
             }
 
-            // Si erreurs, réafficher le formulaire
+            // If there are errors, re-render the form
             if (!empty($errors)) {
                 extract(['errors' => $errors, 'old' => $data]);
                 $viewFile = ($type === 'boss') ? 'create.php' : 'create_small.php';
@@ -100,7 +100,7 @@ class MonsterController
                 return;
             }
 
-            // Création du monstre
+            // Create monster record
             $userId = $_SESSION['user']['u_id'];
             $data = array_merge($data, $images);
             $monsterId = $this->monsterModel->create($data, $userId);
@@ -129,7 +129,7 @@ class MonsterController
         $this->selectCreate();
     }
 
-    // Affiche les détails d'un monstre spécifique
+    // Display details for a specific monster
     /**
      * Show a single monster (small statblock view).
      * Handles authorization and prepares derived view data (abilities grid, etc.).
@@ -143,7 +143,7 @@ class MonsterController
             return;
         }
 
-        // Vérifier accès : public ou propriétaire
+        // Check access: public monster or owned by current user
         $userId = isset($_SESSION['user']) ? $_SESSION['user']['u_id'] : null;
         if (!$monster['is_public'] && $monster['u_id'] != $userId) {
             require_once __DIR__ . '/../views/pages/error-403.php';
@@ -212,7 +212,7 @@ class MonsterController
         }
     }
 
-    // Affiche la liste de tous les monstres, lairs ou utilisateurs avec filtres
+    // Display all monsters, lairs, or users with filters
     public function index()
     {
         // Get search type (monster, lair, or user)
@@ -373,7 +373,7 @@ class MonsterController
         exit;
     }
 
-    // Affiche le formulaire d'édition
+    // Display edit form
     public function edit($id)
     {
         $this->ensureAuthenticated();
@@ -384,7 +384,7 @@ class MonsterController
             return;
         }
 
-        // Vérifier propriété
+        // Verify ownership
         $userId = $_SESSION['user']['u_id'];
         if ($monster['u_id'] != $userId) {
             require_once __DIR__ . '/../views/pages/error-403.php';
@@ -394,7 +394,7 @@ class MonsterController
         require_once __DIR__ . '/../views/monster/edit.php';
     }
 
-    // Traite la mise à jour d'un monstre
+    // Handle monster update
     public function update($id)
     {
         $this->ensureAuthenticated();
@@ -405,7 +405,7 @@ class MonsterController
             return;
         }
 
-        // Vérifier propriété
+        // Verify ownership
         $userId = $_SESSION['user']['u_id'];
         if ($monster['u_id'] != $userId) {
             require_once __DIR__ . '/../views/pages/error-403.php';
@@ -418,7 +418,7 @@ class MonsterController
             $images = [];
 
             // Keep current filenames so we can clean up replaced files after a successful save
-            // Traitement des images
+            // Process images
             if (isset($_FILES['image_portrait']) && !empty($_FILES['image_portrait']['name'])) {
                 $imageResult = $this->uploadImage($_FILES['image_portrait'], 'monsters');
                 if ($imageResult['success']) {
@@ -437,14 +437,14 @@ class MonsterController
                 }
             }
 
-            // Si erreurs
+            // If errors
             if (!empty($errors)) {
                 extract(['errors' => $errors, 'old' => $data, 'monster' => $monster]);
                 require_once __DIR__ . '/../views/monster/edit.php';
                 return;
             }
 
-            // Mise à jour
+            // Update record
             $data = array_merge($data, $images);
             $updated = $this->monsterModel->update($id, $data, $userId);
 
@@ -477,7 +477,7 @@ class MonsterController
             return;
         }
 
-        // Vérifier propriété
+        // Verify ownership
         $userId = $_SESSION['user']['u_id'];
         if ($monster['u_id'] != $userId) {
             require_once __DIR__ . '/../views/pages/error-403.php';
@@ -506,7 +506,7 @@ class MonsterController
         require_once __DIR__ . '/../views/monster/show.php';
     }
 
-    // Affiche les monstres de l'utilisateur connecté
+    // Show monsters for the logged-in user
     public function myMonsters()
     {
         $this->ensureAuthenticated();
@@ -523,7 +523,7 @@ class MonsterController
         require_once __DIR__ . '/../views/monster/my-monsters.php';
     }
 
-    // ===== MÉTHODES HELPER =====
+    // ===== HELPER METHODS =====
     
     /**
      * Prepare ability grid data for monster display.
@@ -662,7 +662,7 @@ class MonsterController
         return $xpByCR[$cr] ?? null;
     }
 
-    // Extrait et prépare les données du formulaire
+    // Extract and normalize form data
     private function getFormData(): array
     {
         return [
@@ -859,7 +859,7 @@ class MonsterController
         return $actions;
     }
 
-    // Parse les actions depuis le formulaire - OLD METHOD (no longer used)
+    // Parse actions from the form - OLD METHOD (no longer used)
     private function parseActions(): array
     {
         $actions = [];
@@ -942,7 +942,7 @@ class MonsterController
         return $actions;
     }
 
-    // Parse les réactions depuis le formulaire
+    // Parse reactions from the form
     private function parseReactions(): array
     {
         $reactions = [];
@@ -961,7 +961,7 @@ class MonsterController
         return $reactions;
     }
 
-    // Parse les capacités légendaires depuis le formulaire
+    // Parse legendary actions from the form
     private function parseLegendaryActions(): array
     {
         $actions = [];

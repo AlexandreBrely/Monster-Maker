@@ -259,7 +259,7 @@ class AuthController
 
             $errors = $this->userModel->validateProfileUpdate($data, $userId);
 
-            // Traitement de l'avatar s'il est fourni
+            // Handle avatar upload when provided
             $avatarFile = null;
             if (!empty($_FILES['avatar']['name'])) {
                 $uploadResult = $this->uploadAvatar($_FILES['avatar']);
@@ -273,7 +273,7 @@ class AuthController
 
             if (empty($errors)) {
                 if ($this->userModel->updateProfile($userId, $data)) {
-                    // Mettre à jour la session
+                    // Refresh session data
                     if (!empty($data['username'])) {
                         $_SESSION['user']['u_username'] = $data['username'];
                     }
@@ -297,14 +297,14 @@ class AuthController
         require_once __DIR__ . '/../views/auth/edit-profile.php';
     }
 
-    // Page de paramètres
+    // Settings page
     public function settings()
     {
         $this->ensureAuthenticated();
         require_once __DIR__ . '/../views/auth/settings.php';
     }
 
-    // Traite le changement de mot de passe
+    // Handle password change
     public function changePassword()
     {
         $this->ensureAuthenticated();
@@ -318,20 +318,20 @@ class AuthController
 
             $errors = [];
 
-            // Vérifier le mot de passe actuel
+            // Check current password
             $user = $this->userModel->findById($userId);
             if (!password_verify($currentPassword, $user['u_password'])) {
                 $errors['current_password'] = 'Current password is incorrect';
             }
 
-            // Valider le nouveau mot de passe
+            // Validate new password
             if (empty($newPassword)) {
                 $errors['new_password'] = 'New password is required';
             } elseif (strlen($newPassword) < 8) {
                 $errors['new_password'] = 'Password too short (minimum 8 characters)';
             }
 
-            // Vérifier la confirmation
+            // Confirm new password matches
             if ($newPassword !== $confirmPassword) {
                 $errors['confirm_password'] = 'Passwords do not match';
             }
@@ -397,7 +397,7 @@ class AuthController
     {
         $result = $this->fileUploadService->upload($file, 'avatars');
         
-        // Convert error messages back to French for consistency with existing code
+        // Convert error messages back to French for consistency with existing UI copy
         if (!$result['success']) {
             $errorMap = [
                 'File upload error:' => 'Erreur lors du téléchargement du fichier',

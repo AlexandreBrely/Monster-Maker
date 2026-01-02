@@ -1,23 +1,23 @@
-# Ignorer les fichiers de configuration IDE
+# Ignore IDE config files
 .vscode/
 .idea/
 
-# Ignorer les dépendances
+# Ignore dependencies
 vendor/
 node_modules/
 
-# Ignorer les données Docker
+# Ignore Docker data
 db_data/
 
-# Ignorer les fichiers de logs
+# Ignore log files
 *.log
 
-# Ignorer les fichiers temporaires
+# Ignore temporary files
 *.tmp
 *.temp
 .DS_Store
 Thumbs.db
 
-# Ignorer les fichiers de configuration locaux
+# Ignore local configuration files
 config/local.php
 .env
