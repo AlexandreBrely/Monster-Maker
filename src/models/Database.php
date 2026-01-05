@@ -66,10 +66,9 @@ class Database
                 ]
             );
         } catch (PDOException $e) {
-            // If connection fails, catch the exception and display error message
-            // In production, log this error instead of displaying it to users
-            echo "Connection error: " . $e->getMessage();
-            die(); // Stop script execution
+            // Log connection error without exposing details to end users
+            error_log('Database connection error: ' . $e->getMessage());
+            throw $e;
         }
 
         return $this->conn; // Return the established PDO connection

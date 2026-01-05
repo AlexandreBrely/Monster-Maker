@@ -4,94 +4,25 @@ namespace App\Services;
 
 /**
  * FileUploadService
- * 
- * WHAT IS THIS?
- * A centralized service for handling ALL file uploads in the application.
- * Before this service, we had duplicate upload code in 3 different controllers.
- * Now we have ONE place to maintain upload logic.
- * 
- * Service = helper class focused on a single responsibility.
- * Purpose: safely upload files to the server.
- * 
- * WHY CENTRALIZE UPLOADS?
- * 1. DRY Principle (Don't Repeat Yourself) - write once, use everywhere
- * 2. Security - fix a bug in one place, it's fixed everywhere
- * 3. Consistency - all uploads follow the same rules
- * 4. Testability - easier to write tests for one service vs multiple controllers
- * 
- * SECURITY FEATURES:
- * - Validates MIME type (checks actual file content, not just extension)
- * - Size limits (default 5MB)
- * - Unique filenames with timestamps (prevents overwrites and conflicts)
- * - Path traversal protection (can't upload outside designated directory)
- * 
- * HOW TO USE:
- * $service = new FileUploadService();
- * $result = $service->upload($_FILES['image'], 'monsters');
- * if ($result['success']) {
- *     echo "Uploaded: " . $result['filename'];
- * }
+ * Single-responsibility helper to validate and store uploads securely.
+ *
+ * ORGANIZATION:
+ * 1) Properties
+ * 2) Public API (upload, deleteFile)
+ * 3) Helpers (filename generation, error messages)
  */
 class FileUploadService
 {
-    /**
-     * Default upload directory (relative to public folder)
-    * Resolves to PROJECT_ROOT/public/uploads/ using __DIR__.
-     * 
-     * WHY PUBLIC/UPLOADS?
-     * - Public folder is accessible via web browser (users can view uploaded images)
-     * - Uploads folder keeps all user-uploaded files organized in one place
-     */
     private $uploadBaseDir = __DIR__ . '/../../public/uploads/';
 
-    /**
-     * Upload a file with security validation
-     * 
-    * Upload flow:
-     * 1. User clicks "Choose File" and selects image.jpg
-     * 2. Browser sends file to server (stored temporarily in /tmp/)
-     * 3. PHP puts file info in $_FILES array
-     * 4. This method validates and moves file to permanent location
-     * 
-     * PARAMETERS EXPLAINED:
-     * @param array $file - The $_FILES array element (e.g., $_FILES['image'])
-     *                      Contains: ['name', 'type', 'tmp_name', 'error', 'size']
-     * 
-     * @param string $uploadDir - Subdirectory name (e.g., 'monsters', 'avatars', 'lairs')
-     *                            Final path will be: public/uploads/monsters/filename.jpg
-     * 
-     * @param int $maxSizeBytes - Maximum file size in bytes (default 5MB = 5,242,880 bytes)
-     *                            Why bytes? File sizes are always measured in bytes on computers.
-     * 
-     * @param array $allowedMimes - Allowed MIME types (default: common image types)
-     *                              MIME type = the ACTUAL file type (not just the extension)
-     *                              Example: 'image/jpeg' is JPEG, 'image/png' is PNG
-     * 
-     * RETURN VALUE:
-     * @return array - Always returns an array with these keys:
-     *   [
-     *     'success' => true/false (did upload work?),
-     *     'filename' => 'uniquename.jpg' (if success) or null (if failed),
-     *     'error' => 'error message' (if failed) or null (if success)
-     *   ]
-     * 
-     * WHY THIS RETURN FORMAT?
-     * - Consistent: caller always knows what to expect
-     * - Informative: includes both result and error message
-     * - Safe: never throws exceptions, always returns structured data
-     */
+    // ===================================================================
+    // SECTION 1: PUBLIC API
+    // ===================================================================
+
     public function upload($file, $uploadDir, $maxSizeBytes = 5242880, $allowedMimes = null): array
     {
-        // Set default allowed MIME types if caller didn't specify
-        if ($allowedMimes === null) {
-            $allowedMimes = [
-                'image/jpeg',  // .jpg, .jpeg files
-                'image/png',   // .png files
-                'image/webp'   // .webp files (modern, smaller than JPEG/PNG)
-            ];
-        }
+        $allowedMimes = $allowedMimes ?? ['image/jpeg', 'image/png', 'image/webp'];
 
-        // === STEP 1: Check for upload errors ===
         if ($file['error'] !== UPLOAD_ERR_OK) {
             return [
                 'success' => false,
@@ -100,7 +31,6 @@ class FileUploadService
             ];
         }
 
-        // === STEP 2: Validate file size ===
         if ($file['size'] > $maxSizeBytes) {
             $maxSizeMB = round($maxSizeBytes / 1048576, 1);
             return [
@@ -110,36 +40,28 @@ class FileUploadService
             ];
         }
 
-        // === STEP 3: Validate MIME type (security check) ===
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $realMimeType = finfo_file($finfo, $file['tmp_name']);
-
-        if (!in_array($realMimeType, $allowedMimes)) {
+        if (!in_array($realMimeType, $allowedMimes, true)) {
             return [
                 'success' => false,
                 'filename' => null,
-                'error' => "Invalid file type. Allowed: JPEG, PNG, GIF, WebP. Got: {$realMimeType}"
+                'error' => "Invalid file type. Allowed: JPEG, PNG, WebP. Got: {$realMimeType}"
             ];
         }
 
-        // === STEP 4: Generate unique filename ===
         $uniqueName = $this->generateUniqueFilename($file['name']);
-
-        // === STEP 5: Ensure upload directory exists ===
         $fullUploadDir = $this->uploadBaseDir . $uploadDir . '/';
-        if (!is_dir($fullUploadDir)) {
-            if (!mkdir($fullUploadDir, 0755, true)) {
-                return [
-                    'success' => false,
-                    'filename' => null,
-                    'error' => 'Failed to create upload directory'
-                ];
-            }
+
+        if (!is_dir($fullUploadDir) && !mkdir($fullUploadDir, 0755, true)) {
+            return [
+                'success' => false,
+                'filename' => null,
+                'error' => 'Failed to create upload directory'
+            ];
         }
 
-        // === STEP 6: Move file from temp to permanent location ===
         $destination = $fullUploadDir . $uniqueName;
-        
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
             return [
                 'success' => false,
@@ -148,7 +70,6 @@ class FileUploadService
             ];
         }
 
-        // === STEP 7: Success! ===
         return [
             'success' => true,
             'filename' => $uniqueName,
@@ -156,13 +77,27 @@ class FileUploadService
         ];
     }
 
-    /**
-     * Generate unique filename to prevent collisions.
-     * Pattern: timestamp_randomstring_originalname.ext
-     * 
-     * @param string $originalFilename Original filename from upload
-     * @return string Unique filename safe for filesystem
-     */
+    public function deleteFile($filename, $uploadDir): bool
+    {
+        if (empty($filename)) {
+            return false;
+        }
+
+        $filePath = $this->uploadBaseDir . $uploadDir . '/' . $filename;
+        $realPath = realpath($filePath);
+        $realUploadDir = realpath($this->uploadBaseDir . $uploadDir);
+
+        if (!$realPath || !$realUploadDir || strpos($realPath, $realUploadDir) !== 0) {
+            return false; // Path traversal attempt or file missing
+        }
+
+        return @unlink($realPath);
+    }
+
+    // ===================================================================
+    // SECTION 2: HELPERS
+    // ===================================================================
+
     private function generateUniqueFilename($originalFilename): string
     {
         $extension = strtolower(pathinfo($originalFilename, PATHINFO_EXTENSION));
@@ -170,14 +105,9 @@ class FileUploadService
         $cleanName = preg_replace('/[^a-z0-9_-]/i', '', $nameWithoutExt);
         $timestamp = time();
         $randomString = bin2hex(random_bytes(4));
-        $uniqueName = "{$timestamp}_{$randomString}_{$cleanName}.{$extension}";
-
-        return $uniqueName;
+        return "{$timestamp}_{$randomString}_{$cleanName}.{$extension}";
     }
 
-    /**
-     * Get human-readable error message for upload error code
-     */
     private function getUploadErrorMessage($errorCode): string
     {
         $messages = [
@@ -192,30 +122,5 @@ class FileUploadService
         ];
 
         return $messages[$errorCode] ?? 'Unknown upload error';
-    }
-
-    /**
-     * Delete a file from uploads directory.
-     * Includes path traversal protection to prevent unauthorized file deletion.
-     * 
-     * @param string $filename Filename to delete
-     * @param string $uploadDir Subdirectory (e.g., 'monsters', 'avatars')
-     * @return bool True if deleted, false if failed or not found
-     */
-    public function deleteFile($filename, $uploadDir): bool
-    {
-        if (empty($filename)) {
-            return false;
-        }
-
-        $filePath = $this->uploadBaseDir . $uploadDir . '/' . $filename;
-        $realPath = realpath($filePath);
-        $realUploadDir = realpath($this->uploadBaseDir . $uploadDir);
-
-        if (!$realPath || strpos($realPath, $realUploadDir) !== 0) {
-            return false; // Path traversal attempt or file doesn't exist
-        }
-
-        return @unlink($realPath);
     }
 }

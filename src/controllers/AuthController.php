@@ -8,19 +8,15 @@ use App\Services\FileUploadService;
 
 /**
  * AuthController
- * Handles user authentication: registration, login, logout, and profile management.
+ * Handles user authentication and profile management.
  * 
- * Responsibilities:
- * - Registration: Validate input, hash passwords, handle avatar uploads
- * - Login: Verify credentials, create session
- * - Profile: Edit username/email, change password, manage avatar
- * - Logout: Destroy session
- * 
- * Security patterns used:
- * - password_hash() / password_verify() for secure password handling
- * - Session-based authentication ($_SESSION['user'])
- * - Owner verification before profile updates
- * - MIME-based file validation for avatars
+ * ORGANIZATION:
+ * 1. Constructor & Authentication Guard
+ * 2. Authentication (Login, Register, Logout)
+ * 3. Profile Management (Edit Profile, Settings)
+ * 4. Password Management (Change Password)
+ * 5. Avatar Management (Upload, Delete)
+ * 6. Helper Methods (private)
  */
 class AuthController
 {
@@ -30,17 +26,13 @@ class AuthController
 
     public function __construct()
     {
-        // Instantiate the User model (delegates data access and validation)
         $this->userModel = new User();
-        // Instantiate Collection model (for creating default collection on registration)
         $this->collectionModel = new Collection();
-        // Instantiate file upload service (handles all file uploads)
         $this->fileUploadService = new FileUploadService();
     }
 
     /**
      * Ensure user is logged in; redirect to login if not.
-     * Use this in controller methods that require authentication.
      */
     private function ensureAuthenticated()
     {
@@ -50,49 +42,34 @@ class AuthController
         }
     }
 
+    // ===================================================================
+    // SECTION 1: AUTHENTICATION
+    // ===================================================================
+
     /**
-     * Display login form and handle POST submission.
-     * 
-     * Process:
-     * 1. Redirect if already logged in
-     * 2. On POST: validate email exists and password matches
-     * 3. If valid: create session and redirect to home
-     * 4. If invalid: display error and re-render form
-     * 
-     * Security notes:
-     * - password_verify() compares hashed password securely (bcrypt algorithm)
-     * - Session data is stored server-side (only session ID is in cookie)
-     * - Error messages don't reveal whether email or password was wrong (prevents user enumeration)
+     * Display login form and handle submission.
+     * Validates credentials using bcrypt password verification.
      */
     public function login()
     {
-        // Redirect logged-in users to home (prevent duplicate login)
         if (isset($_SESSION['user'])) {
             header('Location: index.php?url=home');
             exit;
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // ?? operator: use value from $_POST if it exists, otherwise empty string
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
 
-            // Find user by email; if not found, $user will be false
             $user = $this->userModel->findByEmail($email);
 
-            // password_verify() uses bcrypt to safely compare plaintext password vs hashed password
-            // Why bcrypt? Designed to be slow (prevents brute-force attacks), auto-salts, one-way encryption
-            // Returns true if password matches, false otherwise
             if (!$user || !password_verify($password, $user['u_password'])) {
-                // Generic error message (don't reveal which field was incorrect - security best practice)
                 $errors['login'] = "Invalid credentials.";
                 require_once __DIR__ . '/../views/auth/login.php';
                 return;
             }
 
-            // Successful login: store minimal user data in session
-            // Session persists across requests (server-side storage, client gets cookie with session ID)
-            // Session destroyed on logout or timeout (see logout() method)
+            // Store user data in session
             $_SESSION['user'] = [
                 'u_id' => $user['u_id'],
                 'u_username' => $user['u_name'],
@@ -100,41 +77,25 @@ class AuthController
                 'u_avatar' => $user['u_avatar'] ?? null
             ];
 
-            // Redirect: header() sends HTTP Location header, exit() prevents further code execution
             header('Location: index.php?url=home');
             exit;
         }
 
-        // GET request: display login form
         require_once __DIR__ . '/../views/auth/login.php';
     }
 
     /**
-     * Display registration form and handle POST submission.
-     * 
-     * Process:
-     * 1. Validate username, email, password, confirmation
-     * 2. Upload profile picture (optional)
-     * 3. Hash password using bcrypt
-     * 4. Save user to database
-     * 5. Handle duplicate username/email errors
-     * 6. Redirect to login on success
-     * 
-     * Security notes:
-     * - password_hash() with PASSWORD_DEFAULT uses bcrypt (auto-salting, one-way)
-     * - Validation occurs before database operations (fail fast)
-     * - Duplicate checks prevent user enumeration (errors are specific to field)
+     * Display registration form and handle submission.
+     * Creates new user with bcrypt-hashed password and optional avatar.
      */
     public function register()
     {
-        // Redirect logged-in users to home (prevent duplicate registration)
         if (isset($_SESSION['user'])) {
             header('Location: index.php?url=home');
             exit;
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Extract form data using null coalescing operator (default to empty string)
             $data = [
                 'username' => $_POST['username'] ?? '',
                 'email' => $_POST['email'] ?? '',
@@ -142,111 +103,81 @@ class AuthController
                 'confirm_password' => $_POST['confirm_password'] ?? ''
             ];
 
-            // Validate input (User model contains validation logic)
-            // Returns associative array of field => error message
             $errors = $this->userModel->validateRegister($data);
 
-            // Handle profile picture upload (optional)
+            // Handle avatar upload
             $avatarFilename = null;
             if (!empty($_FILES['profile_picture']['name'])) {
-                // uploadAvatar() handles MIME validation, size limits, and unique naming
                 $uploadResult = $this->uploadAvatar($_FILES['profile_picture']);
                 if ($uploadResult['success']) {
                     $avatarFilename = $uploadResult['filename'];
                 } else {
-                    // Add file upload error to existing validation errors
                     $errors['avatar'] = $uploadResult['error'];
                 }
             }
 
-            // Proceed only if no validation errors occurred
             if (empty($errors)) {
-                // password_hash() with PASSWORD_DEFAULT:
-                // - Uses bcrypt algorithm (current best practice)
-                // - Auto-generates random salt (stored in hash string)
-                // - One-way: cannot reverse hash to get password
-                // - Result is 60-char string: $2y$10$[salt][hash]
                 $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
-                // Attempt to create user in database
                 $result = $this->userModel->create($data['username'], $data['email'], $hashedPassword, $avatarFilename);
                 
-                // Handle different return values from User->create()
                 if ($result === true) {
-                    // Success: Get the new user's ID to create default collection
+                    // Create default "To Print" collection
                     $newUser = $this->userModel->findByEmail($data['email']);
                     
                     if ($newUser) {
-                        // Create default "To Print" collection for new user
                         $this->collectionModel->createDefaultCollection($newUser['u_id']);
                     }
                     
-                    // Redirect to login page
                     header('Location: index.php?url=login');
                     exit;
                 } elseif ($result === 'username') {
-                    // Duplicate username (database unique constraint violation)
                     $errors['username'] = "This username isn't available";
                 } elseif ($result === 'email') {
-                    // Duplicate email (database unique constraint violation)
                     $errors['email'] = "This email is already in use";
                 } else {
-                    // Unexpected error: log for debugging, show generic error to user
-                    // error_log() writes to PHP error log (don't expose to user)
                     error_log("Registration failed with result: " . print_r($result, true));
                     $errors['server'] = "An error occurred, please try again later";
                 }
             }
 
-            // Preserve old values to repopulate form after validation errors
-            // Don't preserve password (security best practice)
             $old = [
                 'username' => $data['username'],
                 'email' => $data['email']
             ];
         }
 
-        // Display registration form (with errors and old values if POST failed)
         require_once __DIR__ . '/../views/auth/register.php';
     }
 
     /**
-     * Log out the current user by destroying session data.
-     * 
-     * session_unset() removes all session variables ($_SESSION['user'], etc.)
-     * session_destroy() deletes the session file on server
-     * Client's session cookie expires automatically
+     * Log out by destroying session data.
      */
     public function logout()
     {
-        session_unset();   // Clear all $_SESSION variables
-        session_destroy(); // Delete session file from server
+        session_unset();
+        session_destroy();
 
         header('Location: index.php?url=home');
         exit;
     }
 
+    // ===================================================================
+    // SECTION 2: PROFILE MANAGEMENT
+    // ===================================================================
+
     /**
-     * Display profile edit form and handle username/email updates.
-     * 
-     * Process:
-     * 1. Verify user is logged in (ensureAuthenticated)
-     * 2. Load current user data from database
-     * 3. On POST: validate changes, handle avatar upload
-     * 4. Update database if valid
-     * 5. Refresh session data with new values
+     * Display profile edit form and handle updates.
+     * Allows changing username, email, and avatar.
      */
     public function editProfile()
     {
         $this->ensureAuthenticated();
 
         $userId = $_SESSION['user']['u_id'];
-        
-        // Fetch fresh user data from database (don't trust session data for edits)
         $user = $this->userModel->findById($userId);
 
         if (!$user) {
-            // User ID in session doesn't exist in database (shouldn't happen)
             require_once __DIR__ . '/../views/pages/error-404.php';
             return;
         }
@@ -259,7 +190,7 @@ class AuthController
 
             $errors = $this->userModel->validateProfileUpdate($data, $userId);
 
-            // Handle avatar upload when provided
+            // Handle avatar upload
             $avatarFile = null;
             if (!empty($_FILES['avatar']['name'])) {
                 $uploadResult = $this->uploadAvatar($_FILES['avatar']);
@@ -297,14 +228,23 @@ class AuthController
         require_once __DIR__ . '/../views/auth/edit-profile.php';
     }
 
-    // Settings page
+    /**
+     * Display settings page.
+     */
     public function settings()
     {
         $this->ensureAuthenticated();
         require_once __DIR__ . '/../views/auth/settings.php';
     }
 
-    // Handle password change
+    // ===================================================================
+    // SECTION 3: PASSWORD MANAGEMENT
+    // ===================================================================
+
+    /**
+     * Handle password change.
+     * Verifies current password before allowing update.
+     */
     public function changePassword()
     {
         $this->ensureAuthenticated();
@@ -318,7 +258,7 @@ class AuthController
 
             $errors = [];
 
-            // Check current password
+            // Verify current password
             $user = $this->userModel->findById($userId);
             if (!password_verify($currentPassword, $user['u_password'])) {
                 $errors['current_password'] = 'Current password is incorrect';
@@ -331,7 +271,6 @@ class AuthController
                 $errors['new_password'] = 'Password too short (minimum 8 characters)';
             }
 
-            // Confirm new password matches
             if ($newPassword !== $confirmPassword) {
                 $errors['confirm_password'] = 'Passwords do not match';
             }
@@ -353,7 +292,14 @@ class AuthController
         require_once __DIR__ . '/../views/auth/settings.php';
     }
 
-    // Delete user's avatar
+    // ===================================================================
+    // SECTION 4: AVATAR MANAGEMENT
+    // ===================================================================
+
+    /**
+     * Delete user's avatar (AJAX endpoint).
+     * Returns JSON response.
+     */
     public function deleteAvatar()
     {
         header('Content-Type: application/json');
@@ -384,20 +330,18 @@ class AuthController
         }
     }
 
+    // ===================================================================
+    // SECTION 5: HELPER METHODS
+    // ===================================================================
+
     /**
-     * Upload avatar using centralized FileUploadService
-     * 
-     * Delegates to FileUploadService for consistent security and validation.
-     * All avatar uploads follow same pattern: validate MIME type, generate unique name, save.
-     * 
-     * @param array $file The $_FILES['avatar'] array
-     * @return array Result ['success' => bool, 'error' => string|null, 'filename' => string|null]
+     * Upload avatar using centralized FileUploadService.
+     * Validates file type, size, and stores securely.
      */
     private function uploadAvatar($file): array
     {
         $result = $this->fileUploadService->upload($file, 'avatars');
         
-        // Convert error messages back to French for consistency with existing UI copy
         if (!$result['success']) {
             $errorMap = [
                 'File upload error:' => 'Erreur lors du téléchargement du fichier',

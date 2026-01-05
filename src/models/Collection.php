@@ -2,50 +2,20 @@
 
 namespace App\Models;
 
-use PDO;
 use App\Models\Database;
+use PDO;
+use PDOException;
 
 /**
  * Collection Model
+ * Manages monster collections and sharing functionality.
  * 
- * WHAT IS A COLLECTION?
- * A collection is like a folder or playlist for organizing monsters.
- * Think of it like:
- * - Music playlists (group songs you like)
- * - Photo albums (group related photos)
- * - Bookmarks folders (organize websites)
- * 
- * In our app, users create collections to organize monsters they want to print or use.
- * 
-* Database relationships:
- * This is a MANY-TO-MANY relationship:
- * - One monster can be in multiple collections (like a song in multiple playlists)
- * - One collection can have multiple monsters (like a playlist with multiple songs)
- * 
- * HOW WE STORE THIS:
- * We use 2 database tables:
- * 1. "collections" table: Stores collection info (name, description, owner)
- * 2. "collection_monsters" table: Links collections to monsters (junction table)
- * 
- * EXAMPLE:
- * Collections table:
- * | collection_id | u_id | collection_name | is_default |
- * |---------------|------|-----------------|------------|
- * | 1             | 5    | To Print        | 1          |
- * | 2             | 5    | My Favorites    | 0          |
- * 
- * Collection_monsters table (junction):
- * | id | collection_id | monster_id |
- * |----|---------------|------------|
- * | 1  | 1             | 10         |  <- Monster 10 is in "To Print"
- * | 2  | 1             | 15         |  <- Monster 15 is in "To Print"
- * | 3  | 2             | 10         |  <- Monster 10 is ALSO in "My Favorites"
- * 
- * KEY FEATURES:
- * - Default "To Print" collection created automatically on user registration
- * - Users can create unlimited custom collections
- * - Cascade deletes: removing collection removes all its monster associations
- * - Ownership verification: users can only manage their own collections
+ * ORGANIZATION:
+ * 1. Constructor
+ * 2. CRUD Operations (Create, Read, Update, Delete)
+ * 3. Collection Management (Add/Remove Monsters)
+ * 4. Sharing Features (Tokens, Public Access)
+ * 5. Helper Methods
  */
 class Collection
 {
@@ -57,429 +27,344 @@ class Collection
         $this->db = $database->getConnection();
     }
 
-    /**
-     * Create default "To Print" collection for a new user.
-     * Auto-created when user registers; is_default = 1 prevents deletion.
-     * 
-     * @param int $userId The new user's ID from the users table
-     * @return bool True if created successfully
-     */
-    public function createDefaultCollection(int $userId): bool
-    {
-        $query = "INSERT INTO collections (u_id, collection_name, description, is_default) 
-                  VALUES (:u_id, 'To Print', 'Default collection for cards ready to print', 1)";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':u_id', $userId, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
+    // ===================================================================
+    // SECTION 1: CRUD OPERATIONS
+    // ===================================================================
 
     /**
-     * Create a new custom collection.
-     * Validates uniqueness per user before inserting.
-     * 
-     * @param int $userId User ID (owner)
-     * @param string $collectionName Collection name (max 100 chars)
-     * @param string|null $description Optional description
-     * @return int|false Collection ID on success, false on failure
+     * CREATE - Create new default collection for user.
      */
-    public function create(int $userId, string $collectionName, ?string $description = null)
+    public function createDefaultCollection($userId): bool
     {
-        if ($this->collectionExists($userId, $collectionName)) {
+        try {
+            $sql = "INSERT INTO collections (u_id, name, description) 
+                    VALUES (:u_id, 'My First Collection', 'Your default monster collection')";
+            $stmt = $this->db->prepare($sql);
+            return (bool) $stmt->execute([':u_id' => $userId]);
+        } catch (PDOException $e) {
+            error_log("Error creating default collection: " . $e->getMessage());
             return false;
         }
-
-        $query = "INSERT INTO collections (u_id, collection_name, description, is_default) 
-                  VALUES (:u_id, :collection_name, :description, 0)";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':u_id', $userId, PDO::PARAM_INT);
-        $stmt->bindParam(':collection_name', $collectionName, PDO::PARAM_STR);
-        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
-        
-        if ($stmt->execute()) {
-            return (int) $this->db->lastInsertId();
-        }
-        
-        return false;
     }
 
     /**
-     * Get all collections for a specific user.
-     * LEFT JOIN includes empty collections; sorted by default first, then alphabetically.
-     * 
-     * @param int $userId User ID
-     * @return array Array of collections with monster counts
+     * CREATE - Create new collection with custom name/description.
      */
-    public function getByUser(int $userId): array
+    public function create($userId, $name, $description = ''): int|false
     {
-        $query = "SELECT 
-                    c.collection_id,
-                    c.collection_name,
-                    c.description,
-                    c.is_default,
-                    c.created_at,
-                    COUNT(cm.monster_id) as monster_count
-                  FROM collections c
-                  LEFT JOIN collection_monsters cm ON c.collection_id = cm.collection_id
-                  WHERE c.u_id = :u_id
-                  GROUP BY c.collection_id
-                  ORDER BY c.is_default DESC, c.collection_name ASC";
+        try {
+            $sql = "INSERT INTO collections (u_id, name, description) 
+                    VALUES (:u_id, :name, :description)";
+            $stmt = $this->db->prepare($sql);
+            
+            if ($stmt->execute([
+                ':u_id' => $userId,
+                ':name' => $name,
+                ':description' => $description
+            ])) {
+                return (int) $this->db->lastInsertId();
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Error creating collection: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * READ - Get all collections for a user with monster counts.
+     */
+    public function getByUser($userId): array
+    {
+        $sql = "SELECT c.*, 
+                       COUNT(cm.monster_id) as monster_count
+                FROM collections c
+                LEFT JOIN collection_monsters cm ON c.collection_id = cm.collection_id
+                WHERE c.u_id = :userId
+                GROUP BY c.collection_id
+                ORDER BY c.created_at DESC";
         
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':u_id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':userId' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get a specific collection by ID
-     * 
-     * @param int $collectionId Collection ID
-     * @return array|false Collection data or false if not found
+     * READ - Get single collection by ID (owner verification required).
      */
-    public function getById(int $collectionId)
+    public function getById($collectionId, $userId = null): array|false
     {
-        $query = "SELECT 
-                    c.collection_id,
-                    c.u_id,
-                    c.collection_name,
-                    c.description,
-                    c.is_default,
-                    c.created_at,
-                    COUNT(cm.monster_id) as monster_count
-                  FROM collections c
-                  LEFT JOIN collection_monsters cm ON c.collection_id = cm.collection_id
-                  WHERE c.collection_id = :collection_id
-                  GROUP BY c.collection_id";
+        $sql = "SELECT * FROM collections WHERE collection_id = :id";
         
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->execute();
+        if ($userId !== null) {
+            $sql .= " AND u_id = :userId";
+        }
         
+        $stmt = $this->db->prepare($sql);
+        $params = [':id' => $collectionId];
+        
+        if ($userId !== null) {
+            $params[':userId'] = $userId;
+        }
+        
+        $stmt->execute($params);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Update collection name and/or description
-     * 
-     * @param int $collectionId Collection ID
-     * @param string $collectionName New name
-     * @param string|null $description New description
-     * @return bool True on success, false on failure
+     * UPDATE - Modify collection name/description.
      */
-    public function update(int $collectionId, string $collectionName, ?string $description = null): bool
+    public function update($collectionId, $userId, $name, $description = ''): bool
     {
-        $query = "UPDATE collections 
-                  SET collection_name = :collection_name, description = :description 
-                  WHERE collection_id = :collection_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->bindParam(':collection_name', $collectionName, PDO::PARAM_STR);
-        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
-        
-        return $stmt->execute();
-    }
-
-    /**
-     * Delete a collection.
-     * Removes only the link entries (via foreign key cascade); monsters remain in DB.
-     * 
-     * @param int $collectionId Collection ID to delete
-     * @return bool True on success
-     */
-    public function delete(int $collectionId): bool
-    {
-        $query = "DELETE FROM collections WHERE collection_id = :collection_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
-
-    /**
-     * Add a monster to a collection.
-     * Creates link in junction table; prevents duplicates.
-     * 
-     * @param int $collectionId Which collection to add to
-     * @param int $monsterId Which monster to add
-     * @return bool True if added successfully; false if already exists
-     */
-    public function addMonster(int $collectionId, int $monsterId): bool
-    {
-        if ($this->monsterInCollection($collectionId, $monsterId)) {
+        try {
+            $sql = "UPDATE collections 
+                    SET name = :name, description = :description 
+                    WHERE collection_id = :id AND u_id = :userId";
+            
+            $stmt = $this->db->prepare($sql);
+            return (bool) $stmt->execute([
+                ':id' => $collectionId,
+                ':userId' => $userId,
+                ':name' => $name,
+                ':description' => $description
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error updating collection: " . $e->getMessage());
             return false;
         }
-
-        $query = "INSERT INTO collection_monsters (collection_id, monster_id) 
-                  VALUES (:collection_id, :monster_id)";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->bindParam(':monster_id', $monsterId, PDO::PARAM_INT);
-        
-        return $stmt->execute();
     }
 
     /**
-     * Remove a monster from a collection.
-     * Deletes link; monster itself remains in DB.
-     * 
-     * @param int $collectionId Collection ID
-     * @param int $monsterId Monster ID
-     * @return bool True on success
+     * DELETE - Remove collection (must be empty).
      */
-    public function removeMonster(int $collectionId, int $monsterId): bool
+    public function delete($collectionId, $userId): bool
     {
-        $query = "DELETE FROM collection_monsters 
-                  WHERE collection_id = :collection_id AND monster_id = :monster_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->bindParam(':monster_id', $monsterId, PDO::PARAM_INT);
-        
-        return $stmt->execute();
+        try {
+            // Check if collection has monsters
+            $sql = "SELECT COUNT(*) FROM collection_monsters WHERE collection_id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id' => $collectionId]);
+            
+            if ($stmt->fetchColumn() > 0) {
+                return false;
+            }
+
+            // Delete collection
+            $sql = "DELETE FROM collections WHERE collection_id = :id AND u_id = :userId";
+            $stmt = $this->db->prepare($sql);
+            return (bool) $stmt->execute([
+                ':id' => $collectionId,
+                ':userId' => $userId
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error deleting collection: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // ===================================================================
+    // SECTION 2: COLLECTION MANAGEMENT
+    // ===================================================================
+
+    /**
+     * Add monster to collection (prevents duplicates).
+     */
+    public function addMonster($collectionId, $monsterId): bool
+    {
+        try {
+            // Check if already exists
+            if ($this->monsterInCollection($collectionId, $monsterId)) {
+                return false;
+            }
+
+            $sql = "INSERT INTO collection_monsters (collection_id, monster_id) 
+                    VALUES (:collection_id, :monster_id)";
+            $stmt = $this->db->prepare($sql);
+            
+            return (bool) $stmt->execute([
+                ':collection_id' => $collectionId,
+                ':monster_id' => $monsterId
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error adding monster to collection: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
-     * Get all monsters in a collection.
-     * INNER JOIN combines collection_monsters with full monster data; ordered newest first.
-     * 
-     * @param int $collectionId Which collection to get monsters from
-     * @return array Array of monster objects with all data + added_at timestamp
+     * Remove monster from collection.
      */
-    public function getMonsters(int $collectionId): array
+    public function removeMonster($collectionId, $monsterId): bool
     {
-        $query = "SELECT 
-                    m.*,
-                    cm.added_at,
-                    COALESCE(like_counts.count, 0) as like_count
-                  FROM collection_monsters cm
-                  INNER JOIN monster m ON cm.monster_id = m.monster_id
-                  LEFT JOIN (
-                      SELECT monster_id, COUNT(*) as count 
-                      FROM monster_likes 
-                      GROUP BY monster_id
-                  ) like_counts ON m.monster_id = like_counts.monster_id
-                  WHERE cm.collection_id = :collection_id
-                  ORDER BY cm.added_at DESC";
+        try {
+            $sql = "DELETE FROM collection_monsters 
+                    WHERE collection_id = :collection_id AND monster_id = :monster_id";
+            $stmt = $this->db->prepare($sql);
+            
+            return (bool) $stmt->execute([
+                ':collection_id' => $collectionId,
+                ':monster_id' => $monsterId
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error removing monster from collection: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get all monsters in a collection with full monster data.
+     */
+    public function getMonsters($collectionId): array
+    {
+        $sql = "SELECT m.* 
+                FROM monster m
+                JOIN collection_monsters cm ON m.monster_id = cm.monster_id
+                WHERE cm.collection_id = :collection_id
+                ORDER BY cm.added_at DESC";
         
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->execute();
-        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':collection_id' => $collectionId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get all collections that contain a specific monster
-     * 
-     * Useful for displaying which collections a monster belongs to.
-     * 
-     * @param int $monsterId Monster ID
-     * @param int|null $userId Optional: filter by user ID
-     * @return array Array of collection data
+     * Get all collections containing a specific monster.
      */
-    public function getCollectionsForMonster(int $monsterId, ?int $userId = null): array
+    public function getCollectionsForMonster($monsterId, $userId): array
     {
-        $query = "SELECT 
-                    c.collection_id,
-                    c.collection_name,
-                    c.is_default
-                  FROM collections c
-                  INNER JOIN collection_monsters cm ON c.collection_id = cm.collection_id
-                  WHERE cm.monster_id = :monster_id";
+        $sql = "SELECT c.*, 
+                       EXISTS(
+                           SELECT 1 FROM collection_monsters cm 
+                           WHERE cm.collection_id = c.collection_id 
+                           AND cm.monster_id = :monster_id
+                       ) as has_monster
+                FROM collections c
+                WHERE c.u_id = :user_id
+                ORDER BY c.name";
         
-        if ($userId !== null) {
-            $query .= " AND c.u_id = :u_id";
-        }
-        
-        $query .= " ORDER BY c.is_default DESC, c.collection_name ASC";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':monster_id', $monsterId, PDO::PARAM_INT);
-        
-        if ($userId !== null) {
-            $stmt->bindParam(':u_id', $userId, PDO::PARAM_INT);
-        }
-        
-        $stmt->execute();
-        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':monster_id' => $monsterId,
+            ':user_id' => $userId
+        ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // ===================================================================
+    // SECTION 3: SHARING FEATURES
+    // ===================================================================
+
     /**
-     * Get user's default "To Print" collection
-     * 
-     * @param int $userId User ID
-     * @return array|false Collection data or false if not found
+     * Generate unique share token for collection.
      */
-    public function getDefaultCollection(int $userId)
+    public function generateShareToken($collectionId): string
     {
-        $query = "SELECT * FROM collections 
-                  WHERE u_id = :u_id AND is_default = 1 
-                  LIMIT 1";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':u_id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-        
+        try {
+            $token = bin2hex(random_bytes(16));
+            
+            $sql = "UPDATE collections SET share_token = :token WHERE collection_id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':token' => $token,
+                ':id' => $collectionId
+            ]);
+            
+            return $token;
+        } catch (PDOException $e) {
+            error_log("Error generating share token: " . $e->getMessage());
+            return '';
+        }
+    }
+
+    /**
+     * Revoke share token (disable sharing).
+     */
+    public function revokeShareToken($collectionId): bool
+    {
+        try {
+            $sql = "UPDATE collections SET share_token = NULL WHERE collection_id = :id";
+            $stmt = $this->db->prepare($sql);
+            return (bool) $stmt->execute([':id' => $collectionId]);
+        } catch (PDOException $e) {
+            error_log("Error revoking share token: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get collection by share token (public access).
+     */
+    public function getByShareToken($token): array|false
+    {
+        $sql = "SELECT * FROM collections WHERE share_token = :token";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':token' => $token]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Check if a collection exists for a user (by name)
-     * 
-     * Used to prevent duplicate collection names.
-     * 
-     * @param int $userId User ID
-     * @param string $collectionName Collection name
-     * @return bool True if exists, false otherwise
+     * Get current share token for collection.
      */
-    private function collectionExists(int $userId, string $collectionName): bool
+    public function getShareToken($collectionId, $userId): string|false
     {
-        $query = "SELECT COUNT(*) FROM collections 
-                  WHERE u_id = :u_id AND collection_name = :collection_name";
+        $sql = "SELECT share_token FROM collections 
+                WHERE collection_id = :id AND u_id = :userId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':id' => $collectionId,
+            ':userId' => $userId
+        ]);
         
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':u_id', $userId, PDO::PARAM_INT);
-        $stmt->bindParam(':collection_name', $collectionName, PDO::PARAM_STR);
-        $stmt->execute();
-        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['share_token'] ?? false;
+    }
+
+    // ===================================================================
+    // SECTION 4: HELPER METHODS
+    // ===================================================================
+
+    /**
+     * Get user's default collection (first created).
+     */
+    public function getDefaultCollection($userId): array|false
+    {
+        $sql = "SELECT * FROM collections 
+                WHERE u_id = :userId 
+                ORDER BY created_at ASC 
+                LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':userId' => $userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Check if collection exists and belongs to user.
+     */
+    public function collectionExists($collectionId, $userId): bool
+    {
+        $sql = "SELECT COUNT(*) FROM collections 
+                WHERE collection_id = :id AND u_id = :userId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':id' => $collectionId,
+            ':userId' => $userId
+        ]);
         return $stmt->fetchColumn() > 0;
     }
 
     /**
-     * Check if a monster is already in a collection
-     * 
-     * Prevents duplicate entries (same monster added twice to one collection).
-     * 
-     * @param int $collectionId Collection ID
-     * @param int $monsterId Monster ID
-     * @return bool True if exists, false otherwise
+     * Check if monster is already in collection.
      */
-    private function monsterInCollection(int $collectionId, int $monsterId): bool
+    private function monsterInCollection($collectionId, $monsterId): bool
     {
-        $query = "SELECT COUNT(*) FROM collection_monsters 
-                  WHERE collection_id = :collection_id AND monster_id = :monster_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->bindParam(':monster_id', $monsterId, PDO::PARAM_INT);
-        $stmt->execute();
-        
+        $sql = "SELECT COUNT(*) FROM collection_monsters 
+                WHERE collection_id = :collection_id AND monster_id = :monster_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':collection_id' => $collectionId,
+            ':monster_id' => $monsterId
+        ]);
         return $stmt->fetchColumn() > 0;
-    }
-
-    /**
-     * Generate a share token for a collection
-     * 
-     * Creates unique, secure token for sharing collections with direct link.
-     * Token is URL-safe and long enough for security.
-     * 
-     * SHARING FEATURE:
-     * - Users can generate a share token for any collection
-     * - Token allows public viewing without account login
-     * - Share link format: index.php?url=collection-public&token=ABC123...
-     * - Users can revoke sharing by generating new token or removing it
-     * 
-     * @param int $collectionId Collection ID
-     * @return bool True on success, false on failure
-     */
-    public function generateShareToken(int $collectionId): bool
-    {
-        // Generate 32-character random token (URL-safe)
-        $token = bin2hex(random_bytes(16));
-        
-        $query = "UPDATE collections 
-                  SET share_token = :token 
-                  WHERE collection_id = :collection_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
-
-    /**
-     * Remove share token from a collection (revoke sharing)
-     * 
-     * Makes collection private again - old links will no longer work.
-     * Useful if user wants to stop sharing.
-     * 
-     * @param int $collectionId Collection ID
-     * @return bool True on success, false on failure
-     */
-    public function revokeShareToken(int $collectionId): bool
-    {
-        $query = "UPDATE collections 
-                  SET share_token = NULL 
-                  WHERE collection_id = :collection_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        
-        return $stmt->execute();
-    }
-
-    /**
-     * Get collection by share token (for public viewing)
-     * 
-     * Retrieves collection data without requiring ownership/authentication.
-     * Only works if collection has share_token set.
-     * 
-     * @param string $token Share token (should be 32 hex characters)
-     * @return array|false Collection data or false if not found
-     */
-    public function getByShareToken(string $token)
-    {
-        // Validate token format (basic protection against invalid queries)
-        if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
-            return false;
-        }
-        
-        $query = "SELECT 
-                    c.collection_id,
-                    c.u_id,
-                    c.collection_name,
-                    c.description,
-                    c.share_token,
-                    c.created_at,
-                    COUNT(cm.monster_id) as monster_count
-                  FROM collections c
-                  LEFT JOIN collection_monsters cm ON c.collection_id = cm.collection_id
-                  WHERE c.share_token = :token
-                  GROUP BY c.collection_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
-        $stmt->execute();
-        
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Get share token for a collection
-     * 
-     * Returns current token if exists, null otherwise.
-     * 
-     * @param int $collectionId Collection ID
-     * @return string|null Share token or null if not shared
-     */
-    public function getShareToken(int $collectionId): ?string
-    {
-        $query = "SELECT share_token FROM collections WHERE collection_id = :collection_id";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':collection_id', $collectionId, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $result = $stmt->fetch();
-        return $result ? $result['share_token'] : null;
     }
 }

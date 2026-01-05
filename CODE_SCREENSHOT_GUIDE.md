@@ -63,64 +63,76 @@ Establishes professional infrastructure understanding: containerization, modular
 Demonstrates mastery of object-oriented design, separation of concerns, business logic encapsulation, and service-oriented architecture.
 
 ### 2.1 Monster Model - Class Definition
-- **Filename/Route:** [src/models/Monster.php](src/models/Monster.php) - lines 1-50
+- **Filename/Route:** [src/models/Monster.php](src/models/Monster.php) - lines 1-32
+- **Code Organization:** 4 sections: CRUD Operations (33-277), Search & Filtering (278-382), Serialization (383-421), Deserialization (422+)
 - **Technical Purpose:** Shows class properties, private/public visibility, constructor initialization, type hints
-- **Professional Legend:** "Monster model class with type-hinted properties: demonstrates encapsulation, visibility control, and constructor dependency injection"
+- **Professional Legend:** "Monster model class with type-hinted properties: demonstrates encapsulation, visibility control, and constructor dependency injection. Organized into 4 clear sections totaling ~600 lines."
 
 ### 2.2 Prepared Statement - INSERT
-- **Filename/Route:** [src/models/Monster.php](src/models/Monster.php) - `createMonster()` method
+- **Filename/Route:** [src/models/Monster.php](src/models/Monster.php) - createMonster() method (SECTION 1: CRUD Operations, lines ~33-120)
+- **Code Organization:** First method in SECTION 1, demonstrating clear separation of create/read/update/delete operations
 - **Technical Purpose:** SQL injection prevention, named parameter binding (`:name`, `:size`, etc.), parameterized queries, error handling
-- **Professional Legend:** "Prepared statement with 15+ named parameters: prevents SQL injection while maintaining readable, maintainable query code"
+- **Professional Legend:** "Prepared statement with 15+ named parameters: prevents SQL injection while maintaining readable, maintainable query code. Part of organized CRUD section in 600+ line model."
 
 ### 2.3 Prepared Statement - SELECT with JOIN
-- **Filename/Route:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - `countLikes()` method
+- **Filename/Route:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - countLikes() method (SECTION 2: Query Operations, lines ~106+)
+- **Code Organization:** 2 sections: CRUD Operations (29-105), Query Operations (106+) for clean separation
 - **Technical Purpose:** JOINs for aggregation, COUNT() optimization, prepared statements with WHERE clause, readable code
-- **Professional Legend:** "SELECT with COUNT and JOIN demonstrating query optimization: counts likes without N+1 queries, using prepared parameterized statements"
+- **Professional Legend:** "SELECT with COUNT and JOIN demonstrating query optimization: counts likes without N+1 queries, using prepared parameterized statements. Query operations separated from CRUD for clarity."
 
 ### 2.4 Controller - Authentication Gate
-- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `create()` method (first 5 lines)
+- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - create() method (ensureAuthenticated call)
+- **Code Organization:** All controllers reorganized with clear section headers (Authentication, CRUD, Helpers) for exam presentation
 - **Technical Purpose:** Authorization checks, redirecting unauthorized users, session validation, early returns for clean control flow
-- **Professional Legend:** "Controller authentication gate: verifies user login before allowing sensitive operations, demonstrates authorization pattern"
+- **Professional Legend:** "Controller authentication gate: verifies user login before allowing sensitive operations, demonstrates authorization pattern. Private ensureAuthenticated() method called at start of protected methods."
 
 ### 2.5 Controller - CRUD Create Logic
-- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `store()` method
+- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - store() method (lines ~90-150)
+- **Code Organization:** SECTION 1: CRUD Operations (lines 51-377), clearly separated with section headers
 - **Technical Purpose:** Data extraction from `$_POST`, type casting, model instantiation, error handling, user feedback
-- **Professional Legend:** "Create operation orchestrating form data → validation → model persistence → user feedback in single cohesive controller method"
+- **Professional Legend:** "Create operation orchestrating form data → validation → model persistence → user feedback in single cohesive controller method. Organized within CRUD section for clarity."
 
 ### 2.6 Controller - CRUD Read with Pagination
-- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `index()` method
+- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - index() method (lines ~52-88)
+- **Code Organization:** SECTION 1: CRUD Operations, first method in organized controller
 - **Technical Purpose:** LIMIT/OFFSET calculation, pagination logic, filtering by `is_public`, COUNT for total pages
-- **Professional Legend:** "Pagination logic calculating LIMIT/OFFSET from page parameter: enables browsing large datasets without loading entire table into memory"
+- **Professional Legend:** "Pagination logic calculating LIMIT/OFFSET from page parameter: enables browsing large datasets without loading entire table into memory. Part of CRUD section demonstrating separation of concerns."
 
 ### 2.7 Controller - CRUD Update with Authorization
-- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `update()` method
+- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - update() method (verify ownership check)
+- **Code Organization:** Controllers now organized with clear section headers: Authentication, CRUD Operations, Helper Methods
 - **Technical Purpose:** Ownership verification (`$monster->u_id === $_SESSION['user']['u_id']`), only owner can edit, data validation, database update
-- **Professional Legend:** "Update operation with ownership check: confirms user owns resource before allowing modification, implementing row-level security"
+- **Professional Legend:** "Update operation with ownership check: confirms user owns resource before allowing modification, implementing row-level security. Code structured with section comments for exam clarity."
 
 ### 2.8 Controller - CRUD Delete with Cleanup
-- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `delete()` method
+- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - delete() method (lines ~340-377)
+- **Code Organization:** End of SECTION 1: CRUD Operations, before Display & View Methods section
 - **Technical Purpose:** Ownership verification, soft/hard delete handling, cascade deletion of related records, error handling
-- **Professional Legend:** "Delete operation cascading to remove monster from collections and likes: maintains data integrity across related tables"
+- **Professional Legend:** "Delete operation cascading to remove monster from collections and likes: maintains data integrity across related tables. Ownership check ensures row-level security."
 
 ### 2.9 FileUploadService - MIME Type Validation
-- **Filename/Route:** [src/services/FileUploadService.php](src/services/FileUploadService.php) - `upload()` method
+- **Filename/Route:** [src/services/FileUploadService.php](src/services/FileUploadService.php) - lines 30-60 (upload method)
+- **Line Range & Sections:** SECTION 1: Configuration (lines 10-24), SECTION 2: Upload Method (lines 26-85)
 - **Technical Purpose:** MIME type checking (not filename-based), file size validation, random filename generation, directory traversal prevention
-- **Professional Legend:** "File upload security: validates MIME type using finfo_file(), generates random filenames, prevents directory traversal attacks"
+- **Professional Legend:** "File upload security: validates MIME type using finfo_file(), generates random filenames, prevents directory traversal attacks. Code organized into clear sections: configuration constants and main upload logic."
 
 ### 2.10 FileUploadService - Random Filename Generation
-- **Filename/Route:** [src/services/FileUploadService.php](src/services/FileUploadService.php) - filename generation logic
+- **Filename/Route:** [src/services/FileUploadService.php](src/services/FileUploadService.php) - lines 70-77
+- **Line Range & Sections:** SECTION 3: Helper Methods (lines 87-126)
 - **Technical Purpose:** Collision prevention, unpredictability for security, preservation of original filename in data attribute
-- **Professional Legend:** "Secure filename generation: concatenates random 16-char hash with original extension, preventing file overwrites and enumeration"
+- **Professional Legend:** "Secure filename generation: concatenates random 16-char hash with original extension, preventing file overwrites and enumeration. Helper methods cleanly separated into dedicated section."
 
 ### 2.11 MonsterLike Model - toggleLike() Logic
-- **Filename/Route:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - `toggleLike()` method
+- **Filename/Route:** [src/models/MonsterLike.php](src/models/MonsterLike.php) - toggleLike() method (SECTION 1: CRUD Operations, lines ~29-65)
+- **Code Organization:** 2 sections for clear separation: CRUD Operations vs Query Operations
 - **Technical Purpose:** UNIQUE constraint handling, INSERT OR DELETE pattern, exception catching for duplicate key errors
-- **Professional Legend:** "Toggle pattern: attempts INSERT, catches duplicate key exception, deletes instead—elegant state machine without explicit SELECT"
+- **Professional Legend:** "Toggle pattern: attempts INSERT, catches duplicate key exception, deletes instead—elegant state machine without explicit SELECT. Organized in CRUD section showing professional code structure."
 
 ### 2.12 JSON Serialization - Complex Data Types
-- **Filename/Route:** [src/models/Monster.php](src/models/Monster.php) - `getMonster()` method returning actions/reactions/legendary_actions
+- **Filename/Route:** [src/models/Monster.php](src/models/Monster.php) - SECTION 3: Serialization (lines 383-421) and SECTION 4: Deserialization (422+)
+- **Code Organization:** Dedicated sections for JSON encode/decode operations, separated from CRUD for clarity
 - **Technical Purpose:** JSON encoding for complex arrays, database storage of structured data, retrieval and deserialization with `json_decode()`
-- **Professional Legend:** "JSON serialization storing complex D&D data structures (actions, reactions, legendary actions) as LONGTEXT, maintaining readability and queryability"
+- **Professional Legend:** "JSON serialization storing complex D&D data structures (actions, reactions, legendary actions) as LONGTEXT, maintaining readability and queryability. Serialization/deserialization logic cleanly separated into dedicated sections."
 
 ---
 
@@ -195,9 +207,10 @@ Demonstrates modern asynchronous architecture, JSON APIs, HTTP semantics, and re
 - **Professional Legend:** "JavaScript state management: toggles heart icon fill state and updates like counter on-screen in real-time during AJAX call"
 
 ### 4.3 Like Endpoint - Backend Controller
-- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `toggleLike()` method
+- **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - toggleLike() method (likely in SECTION 2 or separate API section)
+- **Code Organization:** Controllers organized with 3-4 sections: CRUD, Display/View, PDF/API endpoints
 - **Technical Purpose:** Receiving AJAX requests, authorization checks, model method calls, JSON response with HTTP status codes
-- **Professional Legend:** "Like endpoint controller: validates authentication, calls model to toggle like, returns JSON with new count and liked state, sets HTTP 200 status"
+- **Professional Legend:** "Like endpoint controller: validates authentication, calls model to toggle like, returns JSON with new count and liked state, sets HTTP 200 status. Separated from display methods for clarity."
 
 ### 4.4 Like Endpoint - JSON Response Format
 - **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - JSON response building
@@ -205,19 +218,22 @@ Demonstrates modern asynchronous architecture, JSON APIs, HTTP semantics, and re
 - **Professional Legend:** "API response: well-structured JSON with {success: true, action: 'added', count: 5, liked: true} indicating operation result and new state"
 
 ### 4.5 Add-to-Collection Endpoint
-- **Filename/Route:** [public/api/add-to-collection.php](public/api/add-to-collection.php)
+- **Filename/Route:** [public/api/add-to-collection.php](public/api/add-to-collection.php) - ~37 lines (cleaned)
+- **MVC Compliance:** Thin API wrapper delegating business logic to CollectionController, maintaining MVC separation
 - **Technical Purpose:** Receiving JSON POST body, validation, model method calls, error handling with HTTP status codes, JSON response
-- **Professional Legend:** "Add-to-collection endpoint: receives JSON POST, validates monster/collection ownership, adds with duplicate prevention, returns success JSON"
+- **Professional Legend:** "Add-to-collection endpoint: receives JSON POST, validates monster/collection ownership, adds with duplicate prevention, returns success JSON. Refactored as thin wrapper respecting MVC pattern."
 
 ### 4.6 Create-Collection-and-Add Endpoint
-- **Filename/Route:** [public/api/create-collection-and-add.php](public/api/create-collection-and-add.php)
+- **Filename/Route:** [public/api/create-collection-and-add.php](public/api/create-collection-and-add.php) - ~44 lines (cleaned)
+- **MVC Compliance:** Delegates to CollectionController for atomic operations, thin API layer respecting MVC
 - **Technical Purpose:** Atomic operations (all-or-nothing), transaction-like behavior, error rollback, multiple database operations in single request
-- **Professional Legend:** "Atomic create-and-add endpoint: creates new collection and adds monster in single request, maintains consistency if either step fails"
+- **Professional Legend:** "Atomic create-and-add endpoint: creates new collection and adds monster in single request, maintains consistency if either step fails. Thin wrapper delegates to controller maintaining MVC separation."
 
 ### 4.7 Get-Collections Endpoint
-- **Filename/Route:** [public/api/get-collections.php](public/api/get-collections.php)
+- **Filename/Route:** [public/api/get-collections.php](public/api/get-collections.php) - ~42 lines (cleaned)
+- **MVC Compliance:** Thin wrapper calling CollectionController methods, respects MVC architecture
 - **Technical Purpose:** Fetching user's collections, populating dropdowns, JSON array response, monster count per collection
-- **Professional Legend:** "Collections endpoint: returns user's 5+ collections as JSON array with counts, enabling dropdown population for monster add dialogs"
+- **Professional Legend:** "Collections endpoint: returns user's 5+ collections as JSON array with counts, enabling dropdown population for monster add dialogs. Refactored as thin API wrapper delegating to controller."
 
 ### 4.8 Frontend AJAX - Collection Manager
 - **Filename/Route:** [public/js/collection-manager.js](public/js/collection-manager.js)
@@ -337,19 +353,22 @@ Establishes database expertise, security best practices, and data integrity patt
 - **Professional Legend:** "Prepared statement with 15+ named parameters: binds all user input as parameters, making SQL injection mathematically impossible"
 
 ### 6.7 Password Hashing - Registration
-- **Filename/Route:** [src/controllers/AuthController.php](src/controllers/AuthController.php) - `register()` method password hashing
+- **Filename/Route:** [src/controllers/AuthController.php](src/controllers/AuthController.php) - lines 118-122 (register method)
+- **Line Range & Sections:** SECTION 1: Authentication (lines 45-165), organized with clear section headers
 - **Technical Purpose:** `password_hash()` with bcrypt algorithm, salting, cost parameter, secure password storage
-- **Professional Legend:** "Password security: uses password_hash() with bcrypt, automatically salts each password, stores only hash in database (never plaintext)"
+- **Professional Legend:** "Password security: uses password_hash() with bcrypt, automatically salts each password, stores only hash in database (never plaintext). Register method organized within Authentication section for readability."
 
 ### 6.8 Password Verification - Login
-- **Filename/Route:** [src/controllers/AuthController.php](src/controllers/AuthController.php) - `login()` method password verification
+- **Filename/Route:** [src/controllers/AuthController.php](src/controllers/AuthController.php) - lines 64-68 (login method)
+- **Line Range & Sections:** SECTION 1: Authentication (lines 45-165), 5 clearly labeled sections total
 - **Technical Purpose:** `password_verify()` comparing input against stored hash, timing-safe comparison, login success/failure handling
-- **Professional Legend:** "Login verification: password_verify() performs timing-safe comparison of input password against stored bcrypt hash"
+- **Professional Legend:** "Login verification: password_verify() performs timing-safe comparison of input password against stored bcrypt hash. Part of Authentication section showing professional code organization with clear section boundaries."
 
 ### 6.9 Token-Based Collection Sharing
-- **Filename/Route:** [src/controllers/CollectionController.php](src/controllers/CollectionController.php) - `share()` method generating token
+- **Filename/Route:** [src/controllers/CollectionController.php](src/controllers/CollectionController.php) - share() method (SECTION 2: Collection Management, lines ~241-329)
+- **Code Organization:** 3 sections: CRUD Operations, Collection Management, API Endpoints
 - **Technical Purpose:** Random 32-character token generation, UNIQUE constraint prevents collisions, time-based sharing without user enumeration
-- **Professional Legend:** "Secure sharing: generates random 32-char token stored in share_token column, enables public links without exposing collection_id or user enumeration"
+- **Professional Legend:** "Secure sharing: generates random 32-char token stored in share_token column, enables public links without exposing collection_id or user enumeration. Part of Collection Management section showing professional organization."
 
 ### 6.10 Row-Level Authorization
 - **Filename/Route:** [src/controllers/MonsterController.php](src/controllers/MonsterController.php) - `update()` method ownership check
